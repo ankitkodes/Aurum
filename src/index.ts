@@ -1,2 +1,4 @@
-console.log("hello 123w");
-console.log("testing");
+import 'dotenv/config';
+import { drizzle } from 'drizzle-orm/node-postgres';
+
+const db = drizzle(process.env.DATABASE_URL!);
