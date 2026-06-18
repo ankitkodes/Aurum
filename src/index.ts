@@ -1,4 +1,17 @@
 import 'dotenv/config';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import express from "express";
+import { UserRoutes } from "./modules/user/user.routes.js";
 
-const db = drizzle(process.env.DATABASE_URL!);
+const port = process.env.PORT
+const app = express();
+app.use(express.json());
+
+
+app.use("/api/user", UserRoutes);
+
+app.listen(port, () => {
+    console.log(`running port on ${port}`)
+})
+
+
