@@ -14,10 +14,10 @@ export const Register = (req, res) => __awaiter(void 0, void 0, void 0, function
     try {
         const data = yield UserSchema.parse(req.body);
         const result = yield RegisterService(data);
-        return res.status(result.Status).json({ message: result.message });
+        return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
-        return res.status(400).json({ message: "some Invalid error has occured" });
+        return res.status(500).json({ message: "some Invalid error has occured" });
     }
 });
 export const Login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -27,7 +27,7 @@ export const Login = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
-        return res.status(400).json({ message: "Unable to Login!" });
+        return res.status(500).json({ message: "Unable to Login!" });
     }
 });
 export const Profile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -37,7 +37,7 @@ export const Profile = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(result.status).json({ message: result.message, user: result.user });
     }
     catch (error) {
-        return res.status(400).json({ message: "Some Invalid Error occured!" });
+        return res.status(500).json({ message: "Some Invalid Error occured!" });
     }
 });
 export const UpdateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -48,7 +48,7 @@ export const UpdateProfile = (req, res) => __awaiter(void 0, void 0, void 0, fun
         return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
-        return res.status(201).json({ message: "Some Invalid Error has Occured!" });
+        return res.status(500).json({ message: "Some Invalid Error has Occured!" });
     }
 });
 export const DeleteProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -59,6 +59,6 @@ export const DeleteProfile = (req, res) => __awaiter(void 0, void 0, void 0, fun
         return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
-        return res.status(400).json({ message: "Unable to delete profile" });
+        return res.status(500).json({ message: "Unable to delete profile" });
     }
 });

@@ -20,6 +20,7 @@ export const RegisterRepository = async (data: UserRegistrationSchema) => {
         password: hashedPassword
     });
 
+
     return { message: "Account Created successfully", status: 201 }
 }
 
@@ -34,6 +35,7 @@ export const LoginRespository = async (data: UserLoginSchema) => {
     if (!isPasswordMatched) {
         return { message: "Invalid credentials", status: 401 };
     }
+    console.log("this is user's details:- ", user);
     return { message: "Login successful", status: 200 };
 }
 

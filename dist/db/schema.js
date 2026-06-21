@@ -47,3 +47,4 @@ export const Audit_log = pgTable("audit_log", {
 });
 // type of all table
 export const UserSchema = createInsertSchema(User);
+export const AccountSchema = createInsertSchema(Account);

@@ -60,6 +60,8 @@ export const Audit_log = pgTable("audit_log", {
 
 export const UserSchema = createInsertSchema(User);
 
+export const AccountSchema = createInsertSchema(Account);
+
 
 
 

@@ -15,7 +15,7 @@ const db = drizzle(process.env.DATABASE_URL);
 export const RegisterRepository = (data) => __awaiter(void 0, void 0, void 0, function* () {
     const isExist = yield db.select().from(User).where(eq(User.phoneNo, data.phoneNo));
     if (isExist.length > 0) {
-        return { message: "User Already Exist", Status: 409 };
+        return { message: "User Already Exist", status: 409 };
     }
     const hashedPassword = bcrypt.hashSync(data.password, 10);
     const response = yield db.insert(User).values({
@@ -25,18 +25,19 @@ export const RegisterRepository = (data) => __awaiter(void 0, void 0, void 0, fu
         phoneNo: data.phoneNo,
         password: hashedPassword
     });
-    return { message: "Account Created successfully", Status: 200 };
+    return { message: "Account Created successfully", status: 201 };
 });
 export const LoginRespository = (data) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield db.select().from(User).where(eq(User.phoneNo, data.phoneNo));
     if (user.length < 1) {
-        return { message: "User Doesn't Exist, Please SignUp", status: 201 };
+        return { message: "User Doesn't Exist, Please SignUp", status: 404 };
     }
     const foundUser = user[0];
     const isPasswordMatched = yield bcrypt.compare(data.password, foundUser.password);
     if (!isPasswordMatched) {
         return { message: "Invalid credentials", status: 401 };
     }
+    console.log("this is user's details:- ", user);
     return { message: "Login successful", status: 200 };
 });
 export const ProfileRepository = (userId) => __awaiter(void 0, void 0, void 0, function* () {
@@ -47,7 +48,7 @@ export const UpdateProfileRespository = (userId, data) => __awaiter(void 0, void
     try {
         const user = yield db.select().from(User).where(eq(User.id, userId));
         if (user.length < 1) {
-            return { message: "unable to find profile", status: 302 };
+            return { message: "unable to find profile", status: 404 };
         }
         yield db.update(User).set({
             name: data.name,
@@ -59,19 +60,19 @@ export const UpdateProfileRespository = (userId, data) => __awaiter(void 0, void
         return { message: "profile updated Successfully", status: 200 };
     }
     catch (error) {
-        return { message: "unable to find profile", status: 302 };
+        return { message: "unable to find profile", status: 500 };
     }
 });
 export const DeleteProfileRepository = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = yield db.select().from(User).where(eq(User.id, userId));
         if (user.length < 1) {
-            return { message: "unable to find profile", status: 302 };
+            return { message: "unable to find profile", status: 404 };
         }
         yield db.delete(User).where(eq(User.id, userId));
         return { message: "profile delete successfully", status: 200 };
     }
     catch (error) {
-        return { message: "some Invalid error has occured", status: 302 };
+        return { message: "some Invalid error has occured", status: 500 };
     }
 });
