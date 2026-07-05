@@ -11,9 +11,12 @@ import { CreateAccountService, DeleteAccountService, GetAccountDetailsService, G
 import { AccountRegister } from "./account.types.js";
 export const CreateAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        console.log("create account values:- ", req.body);
+        const { userId } = req.params;
         const data = yield AccountRegister.parse(req.body);
-        const result = yield CreateAccountService(data);
+        const result = yield CreateAccountService(data, userId);
+        if (!result) {
+            return res.status(302).json({ message: "Some problem occured create after sometimes" });
+        }
         return res.status(result.status).json({ message: result.message });
     }
     catch (error) {

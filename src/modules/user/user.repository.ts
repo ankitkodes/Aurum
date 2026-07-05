@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { UserLoginSchema, UserRegistrationSchema } from "./user.types.js"
 import { User } from "../../db/schema.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
 
 const db = drizzle(process.env.DATABASE_URL!);
@@ -20,7 +21,6 @@ export const RegisterRepository = async (data: UserRegistrationSchema) => {
         password: hashedPassword
     });
 
-
     return { message: "Account Created successfully", status: 201 }
 }
 
@@ -35,8 +35,18 @@ export const LoginRespository = async (data: UserLoginSchema) => {
     if (!isPasswordMatched) {
         return { message: "Invalid credentials", status: 401 };
     }
+    const secret = process.env.AUTH_SECRET;
+    if (!secret) {
+        return;
+    }
+
+    const token: string = jwt.sign({ phoneHNo: data.phoneNo }, secret, { expiresIn: '12h' });
+    if (!token) {
+        return { message: "some error has occured loggin after some time", status: 200 };
+    }
+    console.log("token of the user:- ", token);
     console.log("this is user's details:- ", user);
-    return { message: "Login successful", status: 200 };
+    return { message: "Login successful", status: 200, token };
 }
 
 export const ProfileRepository = async (userId: string) => {

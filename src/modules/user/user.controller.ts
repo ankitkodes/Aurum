@@ -10,6 +10,7 @@ export const Register = async (req: { body: UserRegistrationSchema }, res: any) 
         return res.status(result.status).json({ message: result.message });
 
     } catch (error) {
+        console.log("error from register user function:- ", error)
         return res.status(500).json({ message: "some Invalid error has occured" });
     }
 }
@@ -18,9 +19,12 @@ export const Login = async (req: { body: UserLoginSchema }, res: any) => {
     try {
         const logindata = await UserLogin.parse(req.body);
         const result = await LoginService(logindata);
-        return res.status(result.status).json({ message: result.message });
+        if (!result) {
+            return res.status(500).json({ message: "Unable to Login!" });
+        }
+        return res.status(result.status).json({ message: result.message, token: result.token });
     } catch (error) {
-        return res.status(500).json({ message: "Unable to Login!" })
+        return res.status(500).json({ message: "Unable to Login!" });
     }
 }
 

@@ -11,7 +11,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Account } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
 const db = drizzle(process.env.DATABASE_URL);
-export const CreateAccountRepository = (data) => __awaiter(void 0, void 0, void 0, function* () {
+export const CreateAccountRepository = (data, userId) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         if (data.category == null) {
             return { message: "Category is required", status: 400 };
@@ -23,7 +23,7 @@ export const CreateAccountRepository = (data) => __awaiter(void 0, void 0, void 
         yield db.insert(Account).values({
             category: data.category,
             balance: data.balance,
-            user_id: data.user_id
+            user_id: userId
         });
         return { message: "Account Created Successfully", status: 200 };
     }
@@ -35,7 +35,10 @@ export const CreateAccountRepository = (data) => __awaiter(void 0, void 0, void 
 export const GetAccountDetailsRepository = (accountId) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const accountdetails = yield db.select().from(Account).where(eq(Account.id, accountId));
-        return { message: "here your Account details", staus: 300, account: accountdetails };
+        if (accountdetails.length < 1) {
+            return { message: "There isn't account Create it", status: 203 };
+        }
+        return { message: "here your Account details", status: 300, account: accountdetails };
     }
     catch (error) {
         return { message: "unable to fetched details", status: 300 };

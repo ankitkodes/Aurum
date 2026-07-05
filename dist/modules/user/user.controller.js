@@ -17,6 +17,7 @@ export const Register = (req, res) => __awaiter(void 0, void 0, void 0, function
         return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
+        console.log("error from register user function:- ", error);
         return res.status(500).json({ message: "some Invalid error has occured" });
     }
 });
@@ -24,7 +25,10 @@ export const Login = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     try {
         const logindata = yield UserLogin.parse(req.body);
         const result = yield LoginService(logindata);
-        return res.status(result.status).json({ message: result.message });
+        if (!result) {
+            return res.status(500).json({ message: "Unable to Login!" });
+        }
+        return res.status(result.status).json({ message: result.message, token: result.token });
     }
     catch (error) {
         return res.status(500).json({ message: "Unable to Login!" });

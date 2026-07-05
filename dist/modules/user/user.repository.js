@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { drizzle } from "drizzle-orm/node-postgres";
 import { User } from "../../db/schema.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
 const db = drizzle(process.env.DATABASE_URL);
 export const RegisterRepository = (data) => __awaiter(void 0, void 0, void 0, function* () {
@@ -37,8 +38,17 @@ export const LoginRespository = (data) => __awaiter(void 0, void 0, void 0, func
     if (!isPasswordMatched) {
         return { message: "Invalid credentials", status: 401 };
     }
+    const secret = process.env.AUTH_SECRET;
+    if (!secret) {
+        return;
+    }
+    const token = jwt.sign({ phoneHNo: data.phoneNo }, secret, { expiresIn: '12h' });
+    if (!token) {
+        return { message: "some error has occured loggin after some time", status: 200 };
+    }
+    console.log("token of the user:- ", token);
     console.log("this is user's details:- ", user);
-    return { message: "Login successful", status: 200 };
+    return { message: "Login successful", status: 200, token };
 });
 export const ProfileRepository = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const userDetails = yield db.select().from(User).where(eq(User.id, userId));

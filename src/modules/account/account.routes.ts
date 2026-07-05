@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { CreateAccount, DeleteAccount, GetAccountDetails, GetUserAllAccount } from "./account.controller.js";
+import { authenticate } from "../../shared/middleware/Authentication.js";
 
 const router = Router();
-
-router.post("/create", CreateAccount);
-// router.put("/deposit/:accountId", DepositMoney);
-router.get("/accoutDetails/:accountId", GetAccountDetails);
+router.use(authenticate);
+router.post("/create/:userId", CreateAccount);
+router.get("/accountDetails/:accountId", GetAccountDetails);
 router.get("/account/:userId", GetUserAllAccount);
 router.delete("/deleteAccount/:accountId", DeleteAccount);
 
