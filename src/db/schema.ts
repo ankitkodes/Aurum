@@ -21,6 +21,11 @@ export const accountEnum = pgEnum('account_type', ["Saving", "Current", "Salary"
 export const Account = pgTable("account", {
     id: uuid('id').primaryKey().defaultRandom(),
     category: accountEnum('accountType').default("Current"),
+    accountNo: integer("accountNumber").unique()
+        .notNull()
+        .$defaultFn(() => {
+            return crypto.getRandomValues(new Uint32Array(1))[0];
+        }),
     balance: numeric('balance', { precision: 15, scale: 2 }).notNull(),
     user_id: uuid('user_id').references(() => User.id).notNull(),
     created_at: timestamp('created_at').defaultNow(),
@@ -36,12 +41,20 @@ export const Transaction = pgTable("transaction", {
     transaction_amount: numeric('transaction_amount', { precision: 15, scale: 2 }).notNull(),
     sender_account_id: uuid('sender_account_id').references(() => Account.id).notNull(),
     receiver_account_id: uuid('receiver_account_id').references(() => Account.id).notNull(),
-    transactionId: integer().unique().notNull(),
     transactionType: TransactionTypeEnum().default("Credit"),
     status: StatusEnum().default("Pending"),
     account_id: uuid('account_id').references(() => Account.id).notNull(),
     created_at: timestamp('created_at').defaultNow()
 });
+
+export const LedgerSystem = pgTable("ledger_system", {
+    id: uuid('id').primaryKey().defaultRandom(),
+    account_id: uuid('account_id').references(() => Account.id).notNull(),
+    transaction_id: uuid('transaction_id').references(() => Transaction.id).notNull(),
+    type: TransactionTypeEnum().default("Credit"),
+    amount: numeric('amount', { precision: 15, scale: 2 }).notNull(),
+    timestamp: timestamp('timestamp').defaultNow()
+})
 
 export const EntityTypeEnum = pgEnum('entity_type', ["User", "Account", "Transaction"]);
 
@@ -61,6 +74,8 @@ export const Audit_log = pgTable("audit_log", {
 export const UserSchema = createInsertSchema(User);
 
 export const AccountSchema = createInsertSchema(Account);
+
+export const TransactionSchema = createInsertSchema(Transaction);
 
 
 
