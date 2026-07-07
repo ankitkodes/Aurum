@@ -13,12 +13,13 @@ export const SendMoney = (req, res) => __awaiter(void 0, void 0, void 0, functio
     try {
         const { senderAccountNo } = req.params;
         const { receiverAccountNo } = req.params;
-        const amount = req.body;
-        const result = yield SendMoneyService({ senderAccountNo, receiverAccountNo, amount });
-        return res.status((result === null || result === void 0 ? void 0 : result.status) || 200).json(result);
+        const { amount } = req.body;
+        const result = yield SendMoneyService({ senderAccountNo: Number(senderAccountNo), receiverAccountNo: Number(receiverAccountNo), amount });
+        return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
-        return res.status(500).json({ message: "Unable to transfer money, please try again later", status: 500 });
+        console.log("error from sendmoney controller:- ", error);
+        return res.status(500).json({ message: "unable to tranfer money" });
     }
 });
 export const DepositMoney = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -26,10 +27,9 @@ export const DepositMoney = (req, res) => __awaiter(void 0, void 0, void 0, func
         const data = req.body;
         const transactionDetails = yield DepositMoneySchema.parse(data);
         const result = yield DepositMoneyService(transactionDetails);
-        return res.status((result === null || result === void 0 ? void 0 : result.status) || 200).json(result);
     }
     catch (error) {
-        return res.status(500).json({ message: "Unable to deposit money, please try again later", status: 500 });
+        return res.status(500).json({ message: "unable to deposit money" });
     }
 });
 export const CreditMoney = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -37,9 +37,9 @@ export const CreditMoney = (req, res) => __awaiter(void 0, void 0, void 0, funct
         const { accountNo } = req.params;
         const { amount } = req.params;
         const result = yield CreditMoneyService({ accountNo, amount });
-        return res.status((result === null || result === void 0 ? void 0 : result.status) || 200).json(result);
+        return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
-        return res.status(500).json({ message: "Unable to withdraw money, please try again later", status: 500 });
+        return res.status(500).json({ message: "unable to credit money " });
     }
 });

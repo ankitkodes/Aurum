@@ -1,1 +1,0 @@
-ALTER TABLE "ledger_system" DROP COLUMN "balance";

@@ -51,7 +51,7 @@ export const EntityTypeEnum = pgEnum('entity_type', ["User", "Account", "Transac
 export const Audit_log = pgTable("audit_log", {
     id: uuid('id').primaryKey().defaultRandom(),
     user_id: uuid('user_id').references(() => User.id).notNull(),
-    entity_id: integer('updated_entity_id').notNull(),
+    entity_id: uuid('updated_entity_id').notNull(),
     action: varchar({ length: 225 }).notNull(),
     entity_type: EntityTypeEnum().default("User"),
     metadata: json().notNull(),

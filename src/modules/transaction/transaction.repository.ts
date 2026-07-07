@@ -1,75 +1,111 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { CreditMoneySchema, DepositMoneyType, SendMoneySchema } from "./transaction.types.js"
-import { Account, LedgerSystem, Transaction, TransactionTypeEnum } from "../../db/schema.js";
+import { Account, Audit_log, LedgerSystem, Transaction } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
 
 const db = drizzle(process.env.DATABASE_URL!);
 
 export const SendMoneyRespository = async ({ senderAccountNo, receiverAccountNo, amount }: SendMoneySchema) => {
-    const IssenderidExist = await db.select().from(Account).where(eq(Account.accountNo, Number(senderAccountNo)));
-    if (IssenderidExist.length < 1) {
-        return { message: "Sender account not found", status: 404 };
-    }
-    if (Number(IssenderidExist[0].balance > amount)) {
-        return { message: "Insufficient balance in sender account", status: 400 };
-    }
-    const IsreceiverId = await db.select().from(Account).where(eq(Account.accountNo, Number(receiverAccountNo)));
-    if (IsreceiverId.length < 1) {
-        return { message: "Receiver account not found", status: 404 }
-    }
+    try {
 
-    await db.transaction(async (tsx) => {
-        const platform_charges = Number(amount) * 3 / 100;
-        const totalamount = Number(amount) - platform_charges;
+        // validating sender Account
+        const IssenderidExist = await db.select().from(Account).where(eq(Account.accountNo, Number(senderAccountNo)));
+        if (IssenderidExist.length < 1) {
+            return { message: "Sender account not found", status: 404 };
+        }
 
-        // creating a transaction and transfering money from sender Account to receiver Account
-        const [transferMoney] = await tsx.insert(Transaction)
-            .values({
-                transaction_amount: String(totalamount),
-                sender_account_id: IssenderidExist[0].id,
-                receiver_account_id: IsreceiverId[0].id,
-                transactionType: "Credit",
-                status: "Success",
+        // checking amount where transtaction amount should be less than sender balance
+        if (Number(IssenderidExist[0].balance) < Number(amount)) {
+            return { message: "Insufficient balance in sender account", status: 400 };
+        }
+        // validing receiver account
+        const IsreceiverId = await db.select().from(Account).where(eq(Account.accountNo, Number(receiverAccountNo)));
+
+        if (IsreceiverId.length < 1) {
+            return { message: "Receiver account not found", status: 404 }
+        }
+
+        // platform account Id
+        const platform_account_id = process.env.PLATFORM_ACCOUNTNO
+        if (!platform_account_id) {
+            return { message: "unable to transfer money", status: 403 }
+        }
+
+        // transaction where the money is tranfer from sender account to receiver account and also being deducted platfrom charges
+        await db.transaction(async (tsx) => {
+            const platform_charges = Number(amount) * 3 / 100;
+            const totalamount = Number(amount) - platform_charges;
+
+            // creating a transaction and transfering money from sender Account to receiver Account
+            const [transferMoney] = await tsx.insert(Transaction)
+                .values({
+                    transaction_amount: String(totalamount),
+                    sender_account_id: IssenderidExist[0].id,
+                    receiver_account_id: IsreceiverId[0].id,
+                    transactionType: "Credit",
+                    status: "Success",
+                    account_id: IssenderidExist[0].id,
+                })
+                .returning({ id: Transaction.id });
+
+
+            //   recording in audit_log 
+            await tsx.insert(Audit_log).values({
+                user_id: IssenderidExist[0].user_id,
+                entity_id: transferMoney.id,
+                action: "Money transferred",
+                entity_type: "Transaction",
+                metadata: {
+                    transactionId: transferMoney.id,
+                    senderAccountId: IssenderidExist[0].id,
+                    receiverAccountId: IsreceiverId[0].id,
+                    amount,
+                    netAmount: String(totalamount),
+                    platformCharges: String(platform_charges)
+                }
+            });
+
+            // entry in ledgersystem  for sender details
+            await tsx.insert(LedgerSystem).values({
                 account_id: IssenderidExist[0].id,
+                transaction_id: transferMoney.id,
+                type: "Debit",
+                amount: amount
+            });
+
+
+            // entry in ledgersystem for receiver details
+            await tsx.insert(LedgerSystem).values({
+                account_id: IsreceiverId[0].id,
+                transaction_id: transferMoney.id,
+                type: "Credit",
+                amount: String(totalamount)
             })
-            .returning({ id: Transaction.id });
 
-        // entry in ledgersystem  for sender details
-        await tsx.insert(LedgerSystem).values({
-            account_id: IssenderidExist[0].id,
-            transaction_id: transferMoney.id,
-            type: "Debit",
-            amount: amount
-        });
+            //  entry in ledgersystem for platform charges
+            await tsx.insert(LedgerSystem).values({
+                account_id: platform_account_id,
+                transaction_id: transferMoney.id,
+                type: "Credit",
+                amount: String(platform_charges)
+            });
 
+            // updating receiver account balance 
+            await tsx.update(Account).set({
+                balance: String(Number(IsreceiverId[0].balance) + totalamount)
+            }).where(eq(Account.id, IsreceiverId[0].id))
 
-        // entry in ledgersystem for receiver details
-        await tsx.insert(LedgerSystem).values({
-            account_id: IsreceiverId[0].id,
-            transaction_id: transferMoney.id,
-            amount: String(totalamount)
+            // updating sender account balance (deduct the full amount, not just totalamount)
+            await tsx.update(Account).set({
+                balance: String(Number(IssenderidExist[0].balance) - Number(amount))
+            }).where(eq(Account.id, IssenderidExist[0].id,))
         })
 
-        //  entry in ledgersystem for platform charges
-        await tsx.insert(LedgerSystem).values({
-            account_id: process.env.PLATFORM_CHARGE!,
-            transaction_id: transferMoney.id,
-            type: "Credit",
-            amount: String(platform_charges)
-        });
-
-        // updating receiver account balance 
-        await tsx.update(Account).set({
-            balance: String(Number(IsreceiverId[0].balance) + totalamount)
-        }).where(eq(Account.id, IsreceiverId[0].id))
-
-        // updating sender account balance
-        await tsx.update(Account).set({
-            balance: String(Number(IssenderidExist[0].balance) - totalamount)
-        }).where(eq(Account.id, IssenderidExist[0].id,))
-    })
-
-    return { message: "Money transferred successfully", status: 200 };
+        return { message: "Money transferred successfully", status: 200 };
+    } catch (error) {
+        console.log("error from sendMoneyrepository section:- ", error);
+        return { message: "some invalid error has occured", status: 500 }
+    }
 }
 
 export const DepositMoneyRepository = async (data: DepositMoneyType) => {
@@ -82,13 +118,27 @@ export const DepositMoneyRepository = async (data: DepositMoneyType) => {
         const transaction = await db.transaction(async (tsx) => {
 
             //  creating transaction for adding money to account 
-            await tsx.insert(Transaction).values({
+            const [depositTransaction] = await tsx.insert(Transaction).values({
                 transaction_amount: data.transaction_amount,
                 receiver_account_id: data.sender_account_id,
                 transactionType: "Debit",
                 status: "Success",
                 account_id: data.sender_account_id,
                 sender_account_id: data.sender_account_id
+            }).returning({ id: Transaction.id });
+
+            // recording in audit_log
+            await tsx.insert(Audit_log).values({
+                user_id: isAccount[0].user_id,
+                entity_id: depositTransaction.id,
+                action: "Deposit completed",
+                entity_type: "Transaction",
+                metadata: {
+                    transactionId: depositTransaction.id,
+                    accountId: data.sender_account_id,
+                    amount: data.transaction_amount,
+                    newBalance: String(totalamount)
+                }
             });
 
             // updating account balance 
@@ -117,13 +167,27 @@ export const CreditMoneyRepository = async ({ accountNo, amount }: CreditMoneySc
 
         await db.transaction(async (tsx) => {
             // credit  money from account
-            await tsx.insert(Transaction).values({
+            const [withdrawTransaction] = await tsx.insert(Transaction).values({
                 transaction_amount: amount,
                 sender_account_id: isAccount[0].id,
                 receiver_account_id: isAccount[0].id,
                 transactionType: "Credit",
                 status: "Success",
                 account_id: isAccount[0].id
+            }).returning({ id: Transaction.id });
+
+            // recording in audit_log 
+            await tsx.insert(Audit_log).values({
+                user_id: isAccount[0].user_id,
+                entity_id: withdrawTransaction.id,
+                action: "Withdrawal completed",
+                entity_type: "Transaction",
+                metadata: {
+                    transactionId: withdrawTransaction.id,
+                    accountId: isAccount[0].id,
+                    amount,
+                    remainingBalance: String(Number(isAccount[0].balance) - Number(amount))
+                }
             });
 
             // updating account balance

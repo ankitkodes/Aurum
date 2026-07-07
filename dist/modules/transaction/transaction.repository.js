@@ -8,65 +8,96 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Account, LedgerSystem, Transaction } from "../../db/schema.js";
+import { Account, Audit_log, LedgerSystem, Transaction } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
 const db = drizzle(process.env.DATABASE_URL);
 export const SendMoneyRespository = (_a) => __awaiter(void 0, [_a], void 0, function* ({ senderAccountNo, receiverAccountNo, amount }) {
-    const IssenderidExist = yield db.select().from(Account).where(eq(Account.accountNo, Number(senderAccountNo)));
-    if (IssenderidExist.length < 1) {
-        return { message: "Sender account not found", status: 404 };
+    try {
+        // validating sender Account
+        const IssenderidExist = yield db.select().from(Account).where(eq(Account.accountNo, Number(senderAccountNo)));
+        if (IssenderidExist.length < 1) {
+            return { message: "Sender account not found", status: 404 };
+        }
+        // checking amount where transtaction amount should be less than sender balance
+        if (Number(IssenderidExist[0].balance) < Number(amount)) {
+            return { message: "Insufficient balance in sender account", status: 400 };
+        }
+        // validing receiver account
+        const IsreceiverId = yield db.select().from(Account).where(eq(Account.accountNo, Number(receiverAccountNo)));
+        if (IsreceiverId.length < 1) {
+            return { message: "Receiver account not found", status: 404 };
+        }
+        // platform account Id
+        const platform_account_id = process.env.PLATFORM_ACCOUNTNO;
+        if (!platform_account_id) {
+            return { message: "unable to transfer money", status: 403 };
+        }
+        // transaction where the money is tranfer from sender account to receiver account and also being deducted platfrom charges
+        yield db.transaction((tsx) => __awaiter(void 0, void 0, void 0, function* () {
+            const platform_charges = Number(amount) * 3 / 100;
+            const totalamount = Number(amount) - platform_charges;
+            // creating a transaction and transfering money from sender Account to receiver Account
+            const [transferMoney] = yield tsx.insert(Transaction)
+                .values({
+                transaction_amount: String(totalamount),
+                sender_account_id: IssenderidExist[0].id,
+                receiver_account_id: IsreceiverId[0].id,
+                transactionType: "Credit",
+                status: "Success",
+                account_id: IssenderidExist[0].id,
+            })
+                .returning({ id: Transaction.id });
+            //   recording in audit_log 
+            yield tsx.insert(Audit_log).values({
+                user_id: IssenderidExist[0].user_id,
+                entity_id: transferMoney.id,
+                action: "Money transferred",
+                entity_type: "Transaction",
+                metadata: {
+                    transactionId: transferMoney.id,
+                    senderAccountId: IssenderidExist[0].id,
+                    receiverAccountId: IsreceiverId[0].id,
+                    amount,
+                    netAmount: String(totalamount),
+                    platformCharges: String(platform_charges)
+                }
+            });
+            // entry in ledgersystem  for sender details
+            yield tsx.insert(LedgerSystem).values({
+                account_id: IssenderidExist[0].id,
+                transaction_id: transferMoney.id,
+                type: "Debit",
+                amount: amount
+            });
+            // entry in ledgersystem for receiver details
+            yield tsx.insert(LedgerSystem).values({
+                account_id: IsreceiverId[0].id,
+                transaction_id: transferMoney.id,
+                type: "Credit",
+                amount: String(totalamount)
+            });
+            //  entry in ledgersystem for platform charges
+            yield tsx.insert(LedgerSystem).values({
+                account_id: platform_account_id,
+                transaction_id: transferMoney.id,
+                type: "Credit",
+                amount: String(platform_charges)
+            });
+            // updating receiver account balance 
+            yield tsx.update(Account).set({
+                balance: String(Number(IsreceiverId[0].balance) + totalamount)
+            }).where(eq(Account.id, IsreceiverId[0].id));
+            // updating sender account balance (deduct the full amount, not just totalamount)
+            yield tsx.update(Account).set({
+                balance: String(Number(IssenderidExist[0].balance) - Number(amount))
+            }).where(eq(Account.id, IssenderidExist[0].id));
+        }));
+        return { message: "Money transferred successfully", status: 200 };
     }
-    if (Number(IssenderidExist[0].balance > amount)) {
-        return { message: "Insufficient balance in sender account", status: 400 };
+    catch (error) {
+        console.log("error from sendMoneyrepository section:- ", error);
+        return { message: "some invalid error has occured", status: 500 };
     }
-    const IsreceiverId = yield db.select().from(Account).where(eq(Account.accountNo, Number(receiverAccountNo)));
-    if (IsreceiverId.length < 1) {
-        return { message: "Receiver account not found", status: 404 };
-    }
-    yield db.transaction((tsx) => __awaiter(void 0, void 0, void 0, function* () {
-        const platform_charges = Number(amount) * 3 / 100;
-        const totalamount = Number(amount) - platform_charges;
-        // creating a transaction and transfering money from sender Account to receiver Account
-        const [transferMoney] = yield tsx.insert(Transaction)
-            .values({
-            transaction_amount: String(totalamount),
-            sender_account_id: IssenderidExist[0].id,
-            receiver_account_id: IsreceiverId[0].id,
-            transactionType: "Credit",
-            status: "Success",
-            account_id: IssenderidExist[0].id,
-        })
-            .returning({ id: Transaction.id });
-        // entry in ledgersystem  for sender details
-        yield tsx.insert(LedgerSystem).values({
-            account_id: IssenderidExist[0].id,
-            transaction_id: transferMoney.id,
-            type: "Debit",
-            amount: amount
-        });
-        // entry in ledgersystem for receiver details
-        yield tsx.insert(LedgerSystem).values({
-            account_id: IsreceiverId[0].id,
-            transaction_id: transferMoney.id,
-            amount: String(totalamount)
-        });
-        //  entry in ledgersystem for platform charges
-        yield tsx.insert(LedgerSystem).values({
-            account_id: process.env.PLATFORM_CHARGE,
-            transaction_id: transferMoney.id,
-            type: "Credit",
-            amount: String(platform_charges)
-        });
-        // updating receiver account balance 
-        yield tsx.update(Account).set({
-            balance: String(Number(IsreceiverId[0].balance) + totalamount)
-        }).where(eq(Account.id, IsreceiverId[0].id));
-        // updating sender account balance
-        yield tsx.update(Account).set({
-            balance: String(Number(IssenderidExist[0].balance) - totalamount)
-        }).where(eq(Account.id, IssenderidExist[0].id));
-    }));
-    return { message: "Money transferred successfully", status: 200 };
 });
 export const DepositMoneyRepository = (data) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -77,13 +108,26 @@ export const DepositMoneyRepository = (data) => __awaiter(void 0, void 0, void 0
         const totalamount = Number(data.transaction_amount) + Number(isAccount[0].balance);
         const transaction = yield db.transaction((tsx) => __awaiter(void 0, void 0, void 0, function* () {
             //  creating transaction for adding money to account 
-            yield tsx.insert(Transaction).values({
+            const [depositTransaction] = yield tsx.insert(Transaction).values({
                 transaction_amount: data.transaction_amount,
                 receiver_account_id: data.sender_account_id,
                 transactionType: "Debit",
                 status: "Success",
                 account_id: data.sender_account_id,
                 sender_account_id: data.sender_account_id
+            }).returning({ id: Transaction.id });
+            // recording in audit_log
+            yield tsx.insert(Audit_log).values({
+                user_id: isAccount[0].user_id,
+                entity_id: depositTransaction.id,
+                action: "Deposit completed",
+                entity_type: "Transaction",
+                metadata: {
+                    transactionId: depositTransaction.id,
+                    accountId: data.sender_account_id,
+                    amount: data.transaction_amount,
+                    newBalance: String(totalamount)
+                }
             });
             // updating account balance 
             yield tsx.update(Account).set({
@@ -108,13 +152,26 @@ export const CreditMoneyRepository = (_a) => __awaiter(void 0, [_a], void 0, fun
         //   credit money from account;
         yield db.transaction((tsx) => __awaiter(void 0, void 0, void 0, function* () {
             // credit  money from account
-            yield tsx.insert(Transaction).values({
+            const [withdrawTransaction] = yield tsx.insert(Transaction).values({
                 transaction_amount: amount,
                 sender_account_id: isAccount[0].id,
                 receiver_account_id: isAccount[0].id,
                 transactionType: "Credit",
                 status: "Success",
                 account_id: isAccount[0].id
+            }).returning({ id: Transaction.id });
+            // recording in audit_log 
+            yield tsx.insert(Audit_log).values({
+                user_id: isAccount[0].user_id,
+                entity_id: withdrawTransaction.id,
+                action: "Withdrawal completed",
+                entity_type: "Transaction",
+                metadata: {
+                    transactionId: withdrawTransaction.id,
+                    accountId: isAccount[0].id,
+                    amount,
+                    remainingBalance: String(Number(isAccount[0].balance) - Number(amount))
+                }
             });
             // updating account balance
             yield tsx.update(Account).set({

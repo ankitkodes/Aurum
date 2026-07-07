@@ -499,17 +499,39 @@ const swaggerDocument = {
         },
 
         // ═══════════════ TRANSACTION ENDPOINTS ═══════════════
-        '/transaction/send': {
+        '/transaction/send/{senderAccountNo}/{receiverAccountNo}': {
             post: {
                 tags: ['Transaction'],
                 summary: 'Send money (peer-to-peer transfer)',
                 description: 'Transfers money from sender account to receiver account. Deducts 3% platform charges. Creates ledger entries for both parties and the platform.',
                 security: [{ BearerAuth: [] }],
+                parameters: [
+                    {
+                        name: 'senderAccountNo',
+                        in: 'path',
+                        required: true,
+                        schema: { type: 'integer', example: 1234567890 },
+                        description: 'Sender account number'
+                    },
+                    {
+                        name: 'receiverAccountNo',
+                        in: 'path',
+                        required: true,
+                        schema: { type: 'integer', example: 9876543210 },
+                        description: 'Receiver account number'
+                    }
+                ],
                 requestBody: {
                     required: true,
                     content: {
                         'application/json': {
-                            schema: { $ref: '#/components/schemas/SendMoney' }
+                            schema: {
+                                type: 'object',
+                                required: ['amount'],
+                                properties: {
+                                    amount: { type: 'string', example: '1000.00', description: 'Amount to transfer' }
+                                }
+                            }
                         }
                     }
                 },
@@ -519,11 +541,15 @@ const swaggerDocument = {
                         content: { 'application/json': { schema: { $ref: '#/components/schemas/MessageResponse' } } }
                     },
                     '400': {
-                        description: 'Insufficient balance',
+                        description: 'Insufficient balance or invalid amount',
                         content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
                     },
                     '401': {
-                        description: 'Unauthorized',
+                        description: 'Unauthorized — missing or invalid token',
+                        content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+                    },
+                    '403': {
+                        description: 'Forbidden — you do not own the sender account',
                         content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
                     },
                     '404': {
@@ -562,7 +588,11 @@ const swaggerDocument = {
                         content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
                     },
                     '401': {
-                        description: 'Unauthorized',
+                        description: 'Unauthorized — missing or invalid token',
+                        content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+                    },
+                    '403': {
+                        description: 'Forbidden — you do not own the account',
                         content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
                     },
                     '404': {
@@ -577,17 +607,32 @@ const swaggerDocument = {
             }
         },
 
-        '/transaction/credit': {
+        '/transaction/credit/{accountNo}': {
             post: {
                 tags: ['Transaction'],
                 summary: 'Withdraw (credit) money from account',
                 description: 'Withdraws money from a bank account. Minimum withdrawal amount is ₹500. Checks for sufficient balance before processing.',
                 security: [{ BearerAuth: [] }],
+                parameters: [
+                    {
+                        name: 'accountNo',
+                        in: 'path',
+                        required: true,
+                        schema: { type: 'integer', example: 1234567890 },
+                        description: 'Account number to withdraw from'
+                    }
+                ],
                 requestBody: {
                     required: true,
                     content: {
                         'application/json': {
-                            schema: { $ref: '#/components/schemas/CreditMoney' }
+                            schema: {
+                                type: 'object',
+                                required: ['amount'],
+                                properties: {
+                                    amount: { type: 'string', example: '1000.00', description: 'Amount to withdraw (min ₹500)' }
+                                }
+                            }
                         }
                     }
                 },
@@ -601,7 +646,11 @@ const swaggerDocument = {
                         content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
                     },
                     '401': {
-                        description: 'Unauthorized',
+                        description: 'Unauthorized — missing or invalid token',
+                        content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+                    },
+                    '403': {
+                        description: 'Forbidden — you do not own the account',
                         content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
                     },
                     '404': {

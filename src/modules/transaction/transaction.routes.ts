@@ -6,8 +6,8 @@ import { authorizeTransactionAccess } from "../../shared/middleware/Authorizatio
 const router = Router();
 
 router.use(authenticate);
-router.post("/send", authorizeTransactionAccess("senderAccountNo", "accountNo"), SendMoney);
+router.post("/send/:senderAccountNo/:receiverAccountNo", authorizeTransactionAccess("senderAccountNo", "accountNo"), SendMoney);
 router.post("/deposit", authorizeTransactionAccess("sender_account_id", "accountId"), DepositMoney);
-router.post("/credit", authorizeTransactionAccess("accountNo", "accountNo"), CreditMoney);
+router.post("/credit/:accountNo", authorizeTransactionAccess("accountNo", "accountNo"), CreditMoney);
 
 export const transactionRoutes = router;

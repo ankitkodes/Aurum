@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { UserLoginSchema, UserRegistrationSchema } from "./user.types.js"
-import { User } from "../../db/schema.js";
+import { Audit_log, User } from "../../db/schema.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
@@ -13,12 +13,29 @@ export const RegisterRepository = async (data: UserRegistrationSchema) => {
         return { message: "User Already Exist", status: 409 };
     }
     const hashedPassword = bcrypt.hashSync(data.password, 10);
-    const response = await db.insert(User).values({
+    await db.insert(User).values({
         name: data.name,
         email: data.email,
         address: data.address,
         phoneNo: data.phoneNo,
         password: hashedPassword
+    });
+    const response = await db.select().from(User).where(eq(User.phoneNo, data.phoneNo));
+    const createdUser = response[0];
+
+    // recording in autdit_log 
+    await db.insert(Audit_log).values({
+        user_id: createdUser.id,
+        entity_id: createdUser.id,
+        action: "Account registered successfully",
+        entity_type: "User",
+        metadata: {
+            userId: createdUser.id,
+            name: createdUser.name,
+            email: createdUser.email,
+            phoneNo: createdUser.phoneNo,
+            registrationSource: "self-service"
+        }
     });
 
     return { message: "Account Created successfully", status: 201 }
@@ -44,8 +61,6 @@ export const LoginRespository = async (data: UserLoginSchema) => {
     if (!token) {
         return { message: "Failed to generate token, please try again later", status: 500 };
     }
-    console.log("token of the user:- ", token);
-    console.log("this is user's details:- ", user);
     return { message: "Login successful", status: 200, token };
 }
 
@@ -67,6 +82,28 @@ export const UpdateProfileRespository = async (userId: string, data: UserRegistr
             phoneNo: data.phoneNo,
             updated_at: new Date()
         }).where(eq(User.id, userId))
+
+        // recording in audit_log 
+        await db.insert(Audit_log).values({
+            user_id: user[0].id,
+            entity_id: user[0].id,
+            action: "Profile updated",
+            entity_type: "User",
+            metadata: {
+                previous: {
+                    name: user[0].name,
+                    email: user[0].email,
+                    address: user[0].address,
+                    phoneNo: user[0].phoneNo,
+                },
+                updated: {
+                    name: data.name,
+                    email: data.email,
+                    address: data.address,
+                    phoneNo: data.phoneNo,
+                }
+            }
+        })
         return { message: "profile updated Successfully", status: 200 }
     } catch (error) {
         return { message: "unable to find profile", status: 500 }
@@ -79,6 +116,23 @@ export const DeleteProfileRepository = async (userId: string) => {
         if (user.length < 1) {
             return { message: "unable to find profile", status: 404 }
         }
+
+        // recording in autdit_log 
+        await db.insert(Audit_log).values({
+            user_id: user[0].id,
+            entity_id: user[0].id,
+            action: "Profile deleted",
+            entity_type: "User",
+            metadata: {
+                deletedUser: {
+                    id: user[0].id,
+                    name: user[0].name,
+                    email: user[0].email,
+                    phoneNo: user[0].phoneNo,
+                    address: user[0].address,
+                }
+            }
+        });
         await db.delete(User).where(eq(User.id, userId));
         return { message: "profile delete successfully", status: 200 };
     } catch (error) {

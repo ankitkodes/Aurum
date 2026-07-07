@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1783344845249,
-      "tag": "0000_pink_otto_octavius",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1783345106356,
-      "tag": "0001_aromatic_excalibur",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1783371114867,
-      "tag": "0002_spicy_mockingbird",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1783371531486,
-      "tag": "0003_nostalgic_wither",
+      "when": 1783436598822,
+      "tag": "0000_left_leech",
       "breakpoints": true
     }
   ]

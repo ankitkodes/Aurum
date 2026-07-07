@@ -58,8 +58,10 @@ export const authorizeAccountAccess = (paramName = "accountId") => {
  * before allowing the transaction to proceed.
  * 
  * Supports 3 modes based on how the account is identified:
- *  - "accountNo"  → looks up by Account.accountNo (for send/credit routes, from req.body)
- *  - "accountId"  → looks up by Account.id UUID  (for deposit route, from req.body)
+ *  - "accountNo"  → looks up by Account.accountNo (for send/credit routes)
+ *  - "accountId"  → looks up by Account.id UUID  (for deposit route)
+ * 
+ * The field value is resolved from req.params first, then req.body.
  */
 export const authorizeTransactionAccess = (fieldName = "senderAccountNo", lookupBy: "accountNo" | "accountId" = "accountNo") => {
     return async (req: any, res: any, next: any) => {
@@ -69,8 +71,8 @@ export const authorizeTransactionAccess = (fieldName = "senderAccountNo", lookup
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        // Transaction data comes from req.body, not req.params
-        const fieldValue = req.body?.[fieldName];
+        // Check params first (URL path), then fall back to body
+        const fieldValue = req.params?.[fieldName] ?? req.body?.[fieldName];
 
         if (!fieldValue) {
             return res.status(400).json({ message: `Missing required field: ${fieldName}` });
