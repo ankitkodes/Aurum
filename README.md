@@ -1,4 +1,4 @@
-<![CDATA[<div align="center">
+<div align="center">
 
 <br/>
 
@@ -370,4 +370,3 @@ ISC
 <div align="center">
 <sub>Built by <a href="https://github.com/ankitkodes">Ankit Kumar</a></sub>
 </div>
-]]>
