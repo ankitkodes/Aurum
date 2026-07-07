@@ -10,8 +10,7 @@ export const Register = async (req: { body: UserRegistrationSchema }, res: any) 
         return res.status(result.status).json({ message: result.message });
 
     } catch (error) {
-        console.log("error from register user function:- ", error)
-        return res.status(500).json({ message: "some Invalid error has occured" });
+        return res.status(500).json({ message: "Unable to register user" });
     }
 }
 
@@ -34,7 +33,7 @@ export const Profile = async (req: { params: { userId: string } }, res: any) => 
         const result = await ProfileService(userId);
         return res.status(result.status).json({ message: result.message, user: result.user });
     } catch (error) {
-        return res.status(500).json({ message: "Some Invalid Error occured!" })
+        return res.status(500).json({ message: "Unable to fetch profile" })
     }
 }
 
@@ -46,7 +45,7 @@ export const UpdateProfile = async (req: { body: UserRegistrationSchema; params:
         return res.status(result.status).json({ message: result.message })
 
     } catch (error) {
-        return res.status(500).json({ message: "Some Invalid Error has Occured!" })
+        return res.status(500).json({ message: "Unable to update profile" })
     }
 }
 
@@ -54,9 +53,7 @@ export const DeleteProfile = async (req: { params: { userId: string } }, res: an
     try {
         const { userId } = req.params;
         const result = await DeleteProfileService(userId);
-        console.log("the value of result:- ", result)
         return res.status(result.status).json({ message: result.message });
-
 
     } catch (error) {
         return res.status(500).json({ message: "Unable to delete profile" })

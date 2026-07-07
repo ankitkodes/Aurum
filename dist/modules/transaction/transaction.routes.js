@@ -6,5 +6,5 @@ const router = Router();
 router.use(authenticate);
 router.post("/send/:senderAccountNo/:receiverAccountNo", authorizeTransactionAccess("senderAccountNo", "accountNo"), SendMoney);
 router.post("/deposit", authorizeTransactionAccess("sender_account_id", "accountId"), DepositMoney);
-router.post("/credit/:accountNo", authorizeTransactionAccess("accountNo", "accountNo"), CreditMoney);
+router.post("/withdraw/:accountNo", authorizeTransactionAccess("accountNo", "accountNo"), CreditMoney);
 export const transactionRoutes = router;

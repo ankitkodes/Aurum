@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { CreateAccountService, DeleteAccountService, GetAccountDetailsService, GetUserAllAccountService } from "./account.service.js";
+import { CreateAccountService, DeleteAccountService, GetAccountDetailsService, GetUserAllAccountService, TransactionHistoryService } from "./account.service.js";
 import { AccountRegister } from "./account.types.js";
 export const CreateAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -32,6 +32,20 @@ export const GetAccountDetails = (req, res) => __awaiter(void 0, void 0, void 0,
     }
     catch (error) {
         return res.status(500).json({ message: "Unable to fetch details, try again later" });
+    }
+});
+export const TransactionHistory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const { accountId } = req.params;
+        const result = yield TransactionHistoryService(accountId);
+        return res.status(result.status).json({
+            message: result.message,
+            transactions: (_a = result.transactions) !== null && _a !== void 0 ? _a : []
+        });
+    }
+    catch (error) {
+        return res.status(500).json({ message: "Unable to fetch transaction details" });
     }
 });
 export const GetUserAllAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {

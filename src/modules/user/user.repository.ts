@@ -38,7 +38,7 @@ export const RegisterRepository = async (data: UserRegistrationSchema) => {
         }
     });
 
-    return { message: "Account Created successfully", status: 201 }
+    return { message: "Account created successfully", status: 201 }
 }
 
 
@@ -66,7 +66,7 @@ export const LoginRespository = async (data: UserLoginSchema) => {
 
 export const ProfileRepository = async (userId: string) => {
     const userDetails = await db.select().from(User).where(eq(User.id, userId));
-    return { message: "profile retured successfully", status: 200, user: userDetails[0] };
+    return { message: "Profile returned successfully", status: 200, user: userDetails[0] };
 }
 
 export const UpdateProfileRespository = async (userId: string, data: UserRegistrationSchema) => {
@@ -104,9 +104,9 @@ export const UpdateProfileRespository = async (userId: string, data: UserRegistr
                 }
             }
         })
-        return { message: "profile updated Successfully", status: 200 }
+        return { message: "Profile updated successfully", status: 200 }
     } catch (error) {
-        return { message: "unable to find profile", status: 500 }
+        return { message: "Unable to find profile", status: 500 }
     }
 }
 
@@ -134,8 +134,8 @@ export const DeleteProfileRepository = async (userId: string) => {
             }
         });
         await db.delete(User).where(eq(User.id, userId));
-        return { message: "profile delete successfully", status: 200 };
+        return { message: "Profile deleted successfully", status: 200 };
     } catch (error) {
-        return { message: "some Invalid error has occured", status: 500 }
+        return { message: "Unable to delete profile", status: 500 }
     }
 }

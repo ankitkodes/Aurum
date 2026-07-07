@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { CheckElegiblityCriteria } from "../../shared/utils/Account.js";
-import { CreateAccountRepository, DeleteAccountRepository, GetAccountDetailsRepository, GetUserAllAccountRepository } from "./account.repository.js";
+import { CreateAccountRepository, DeleteAccountRepository, GetAccountDetailsRepository, GetTransactionHistoryRepository, GetUserAllAccountRepository } from "./account.repository.js";
 export const CreateAccountService = (data, userId) => __awaiter(void 0, void 0, void 0, function* () {
     const isEligble = CheckElegiblityCriteria(data);
     if (!isEligble) {
@@ -18,6 +18,9 @@ export const CreateAccountService = (data, userId) => __awaiter(void 0, void 0, 
 });
 export const GetAccountDetailsService = (accountId) => __awaiter(void 0, void 0, void 0, function* () {
     return yield GetAccountDetailsRepository(accountId);
+});
+export const TransactionHistoryService = (accountId) => __awaiter(void 0, void 0, void 0, function* () {
+    return yield GetTransactionHistoryRepository(accountId);
 });
 export const GetUserAllAccountService = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     return GetUserAllAccountRepository(userId);

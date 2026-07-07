@@ -1,5 +1,5 @@
 import { CheckElegiblityCriteria } from "../../shared/utils/Account.js";
-import { CreateAccountRepository, DeleteAccountRepository, GetAccountDetailsRepository, GetUserAllAccountRepository } from "./account.repository.js";
+import { CreateAccountRepository, DeleteAccountRepository, GetAccountDetailsRepository, GetTransactionHistoryRepository, GetUserAllAccountRepository } from "./account.repository.js";
 import { AccountRegisterSchema } from "./account.types.js";
 
 export const CreateAccountService = async (data: AccountRegisterSchema, userId: string) => {
@@ -12,6 +12,10 @@ export const CreateAccountService = async (data: AccountRegisterSchema, userId: 
 
 export const GetAccountDetailsService = async (accountId: string) => {
     return await GetAccountDetailsRepository(accountId);
+}
+
+export const TransactionHistoryService = async (accountId: string) => {
+    return await GetTransactionHistoryRepository(accountId);
 }
 
 export const GetUserAllAccountService = async (userId: string) => {

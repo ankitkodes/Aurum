@@ -103,8 +103,7 @@ export const SendMoneyRespository = async ({ senderAccountNo, receiverAccountNo,
 
         return { message: "Money transferred successfully", status: 200 };
     } catch (error) {
-        console.log("error from sendMoneyrepository section:- ", error);
-        return { message: "some invalid error has occured", status: 500 }
+        return { message: "Unable to transfer money", status: 500 }
     }
 }
 
@@ -148,7 +147,7 @@ export const DepositMoneyRepository = async (data: DepositMoneyType) => {
         })
         return { message: "Deposit completed successfully", status: 200, transaction };
     } catch (error) {
-        return { message: "Failed to deposit money, please try again later", status: 500 };
+        return { message: "Unable to deposit money", status: 500 };
     }
 
 }
@@ -197,6 +196,6 @@ export const CreditMoneyRepository = async ({ accountNo, amount }: CreditMoneySc
         })
         return { message: "Withdrawal completed successfully", status: 200 };
     } catch (error) {
-        return { message: "Failed to withdraw money, please try again later", status: 500 };
+        return { message: "Unable to withdraw money", status: 500 };
     }
 }

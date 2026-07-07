@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { CreateAccount, DeleteAccount, GetAccountDetails, GetUserAllAccount } from "./account.controller.js";
+import { CreateAccount, DeleteAccount, GetAccountDetails, TransactionHistory, GetUserAllAccount } from "./account.controller.js";
 import { authenticate } from "../../shared/middleware/Authentication.js";
 import { authorizeUserAccess, authorizeAccountAccess } from "../../shared/middleware/Authorization.js";
 const router = Router();
 router.use(authenticate);
 router.post("/create/:userId", authorizeUserAccess(), CreateAccount);
 router.get("/accountDetails/:accountId", authorizeAccountAccess(), GetAccountDetails);
+router.get("/:accountId/statement", authorizeAccountAccess(), TransactionHistory);
 router.get("/account/:userId", authorizeUserAccess(), GetUserAllAccount);
 router.delete("/deleteAccount/:accountId", authorizeAccountAccess(), DeleteAccount);
 export const AccountRoutes = router;

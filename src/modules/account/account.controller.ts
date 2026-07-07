@@ -1,5 +1,4 @@
-import { StringifyOptions } from "node:querystring";
-import { CreateAccountService, DeleteAccountService, GetAccountDetailsService, GetUserAllAccountService } from "./account.service.js";
+import { CreateAccountService, DeleteAccountService, GetAccountDetailsService, GetUserAllAccountService, TransactionHistoryService } from "./account.service.js";
 import { AccountRegister, AccountRegisterSchema } from "./account.types.js"
 
 export const CreateAccount = async (req: { body: AccountRegisterSchema; params: { userId: string } }, res: any) => {
@@ -12,8 +11,7 @@ export const CreateAccount = async (req: { body: AccountRegisterSchema; params: 
         }
         return res.status(result.status).json({ message: result.message })
     } catch (error) {
-        console.log("controller values:- ", error)
-        return res.status(500).json({ message: "Unable to create Account" })
+        return res.status(500).json({ message: "Unable to create account" })
     }
 };
 
@@ -26,6 +24,19 @@ export const GetAccountDetails = async (req: { params: { accountId: string } }, 
 
     } catch (error) {
         return res.status(500).json({ message: "Unable to fetch details, try again later" })
+    }
+}
+
+export const TransactionHistory = async (req: { params: { accountId: string } }, res: any) => {
+    try {
+        const { accountId } = req.params;
+        const result = await TransactionHistoryService(accountId);
+        return res.status(result.status).json({
+            message: result.message,
+            transactions: result.transactions ?? []
+        })
+    } catch (error) {
+        return res.status(500).json({ message: "Unable to fetch transaction details" })
     }
 }
 

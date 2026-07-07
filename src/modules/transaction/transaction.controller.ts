@@ -10,8 +10,7 @@ export const SendMoney = async (req: { body: { amount: string }; params: { sende
         const result = await SendMoneyService({ senderAccountNo: Number(senderAccountNo), receiverAccountNo: Number(receiverAccountNo), amount });
         return res.status(result.status).json({ message: result.message });
     } catch (error) {
-        console.log("error from sendmoney controller:- ", error);
-        return res.status(500).json({ message: "unable to tranfer money" })
+        return res.status(500).json({ message: "Unable to transfer money" })
     }
 }
 export const DepositMoney = async (req: { body: string; }, res: any) => {
@@ -32,6 +31,6 @@ export const CreditMoney = async (req: { params: { accountNo: number, amount: st
         const result = await CreditMoneyService({ accountNo, amount });
         return res.status(result.status).json({ message: result.message })
     } catch (error) {
-        return res.status(500).json({ message: "unable to credit money "})
+        return res.status(500).json({ message: "unable to credit money " })
     }
 }
