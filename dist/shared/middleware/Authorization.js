@@ -1,103 +1,96 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { Account } from "../../db/schema.js";
 import { GetAccountDetailsRepository } from "../../modules/account/account.repository.js";
-
-const db = drizzle(process.env.DATABASE_URL!);
-
+const db = drizzle(process.env.DATABASE_URL);
 export const authorizeUserAccess = (paramName = "userId") => {
-    return (req: any, res: any, next: any) => {
+    return (req, res, next) => {
+        var _a;
         const authenticatedUser = req.user;
-        const requestedUserId = req.params?.[paramName];
-
+        const requestedUserId = (_a = req.params) === null || _a === void 0 ? void 0 : _a[paramName];
         if (!authenticatedUser || !authenticatedUser.id) {
             return res.status(401).json({ message: "Unauthorized" });
         }
-
         if (!requestedUserId) {
             return res.status(400).json({ message: "Missing resource owner id" });
         }
-
         if (authenticatedUser.id !== requestedUserId) {
             return res.status(403).json({ message: "Forbidden: user not allowed to access this resource" });
         }
-
         next();
     };
 };
-
 export const authorizeAccountAccess = (paramName = "accountId") => {
-    return async (req: any, res: any, next: any) => {
+    return (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a;
         const authenticatedUser = req.user;
-        const accountId = req.params?.[paramName];
-
+        const accountId = (_a = req.params) === null || _a === void 0 ? void 0 : _a[paramName];
         if (!authenticatedUser || !authenticatedUser.id) {
             return res.status(401).json({ message: "Unauthorized" });
         }
         if (!accountId) {
             return res.status(400).json({ message: "Missing account id" });
         }
-
-        const result = await GetAccountDetailsRepository(accountId);
-
+        const result = yield GetAccountDetailsRepository(accountId);
         if (result.status === 404 || !result.account || result.account.length < 1) {
             return res.status(404).json({ message: "Account not found" });
         }
-
         if (authenticatedUser.id !== result.account[0].user_id) {
             return res.status(403).json({ message: "Forbidden: user not allowed to access this resource" });
         }
-
         next();
-    };
+    });
 };
-
 /**
  * Middleware to authorize transaction access.
  * Verifies that the authenticated user owns the sender/source account
  * before allowing the transaction to proceed.
- * 
+ *
  * Supports 3 modes based on how the account is identified:
  *  - "accountNo"  → looks up by Account.accountNo (for send/credit routes, from req.body)
  *  - "accountId"  → looks up by Account.id UUID  (for deposit route, from req.body)
  */
-export const authorizeTransactionAccess = (fieldName = "senderAccountNo", lookupBy: "accountNo" | "accountId" = "accountNo") => {
-    return async (req: any, res: any, next: any) => {
+export const authorizeTransactionAccess = (fieldName = "senderAccountNo", lookupBy = "accountNo") => {
+    return (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a;
         const authenticatedUser = req.user;
-
         if (!authenticatedUser || !authenticatedUser.id) {
             return res.status(401).json({ message: "Unauthorized" });
         }
-
         // Transaction data comes from req.body, not req.params
-        const fieldValue = req.body?.[fieldName];
-
+        const fieldValue = (_a = req.body) === null || _a === void 0 ? void 0 : _a[fieldName];
         if (!fieldValue) {
             return res.status(400).json({ message: `Missing required field: ${fieldName}` });
         }
-
         try {
             let account;
-
             if (lookupBy === "accountNo") {
-                const results = await db.select().from(Account).where(eq(Account.accountNo, Number(fieldValue)));
-                account = results[0];
-            } else {
-                const results = await db.select().from(Account).where(eq(Account.id, String(fieldValue)));
+                const results = yield db.select().from(Account).where(eq(Account.accountNo, Number(fieldValue)));
                 account = results[0];
             }
-
+            else {
+                const results = yield db.select().from(Account).where(eq(Account.id, String(fieldValue)));
+                account = results[0];
+            }
             if (!account) {
                 return res.status(404).json({ message: "Source account not found" });
             }
-
             if (authenticatedUser.id !== account.user_id) {
                 return res.status(403).json({ message: "Forbidden: you do not own this account" });
             }
-
             next();
-        } catch (error) {
+        }
+        catch (error) {
             return res.status(500).json({ message: "Authorization check failed" });
         }
-    };
+    });
 };

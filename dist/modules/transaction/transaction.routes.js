@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { CreditMoney, DepositMoney, SendMoney } from "./transaction.controller.js";
 import { authenticate } from "../../shared/middleware/Authentication.js";
+import { authorizeTransactionAccess } from "../../shared/middleware/Authorization.js";
 const router = Router();
 router.use(authenticate);
-router.post("/send", SendMoney);
-router.post("/deposit", DepositMoney);
-router.post("/credit", CreditMoney);
+router.post("/send", authorizeTransactionAccess("senderAccountNo", "accountNo"), SendMoney);
+router.post("/deposit", authorizeTransactionAccess("sender_account_id", "accountId"), DepositMoney);
+router.post("/credit", authorizeTransactionAccess("accountNo", "accountNo"), CreditMoney);
 export const transactionRoutes = router;

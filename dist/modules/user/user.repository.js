@@ -42,7 +42,7 @@ export const LoginRespository = (data) => __awaiter(void 0, void 0, void 0, func
     if (!secret) {
         return { message: "Authentication secret not configured", status: 500 };
     }
-    const token = jwt.sign({ phoneHNo: data.phoneNo }, secret, { expiresIn: '12h' });
+    const token = jwt.sign({ id: foundUser.id, phoneNo: foundUser.phoneNo }, secret, { expiresIn: '12h' });
     if (!token) {
         return { message: "Failed to generate token, please try again later", status: 500 };
     }

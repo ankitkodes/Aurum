@@ -40,7 +40,7 @@ export const LoginRespository = async (data: UserLoginSchema) => {
         return { message: "Authentication secret not configured", status: 500 };
     }
 
-    const token: string = jwt.sign({ phoneHNo: data.phoneNo }, secret, { expiresIn: '12h' });
+    const token: string = jwt.sign({ id: foundUser.id, phoneNo: foundUser.phoneNo }, secret, { expiresIn: '12h' });
     if (!token) {
         return { message: "Failed to generate token, please try again later", status: 500 };
     }
