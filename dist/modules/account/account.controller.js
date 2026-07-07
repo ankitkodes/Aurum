@@ -15,13 +15,13 @@ export const CreateAccount = (req, res) => __awaiter(void 0, void 0, void 0, fun
         const data = yield AccountRegister.parse(req.body);
         const result = yield CreateAccountService(data, userId);
         if (!result) {
-            return res.status(302).json({ message: "Some problem occured create after sometimes" });
+            return res.status(500).json({ message: "Some problem occured, try again later" });
         }
         return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
         console.log("controller values:- ", error);
-        return res.status(201).json({ message: "unable to create Account" });
+        return res.status(500).json({ message: "Unable to create Account" });
     }
 });
 export const GetAccountDetails = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -31,7 +31,7 @@ export const GetAccountDetails = (req, res) => __awaiter(void 0, void 0, void 0,
         return res.status(result.status).json({ message: result.message, account: result.account });
     }
     catch (error) {
-        return res.status(302).json({ message: "Unable to fetdetails , Try again later!" });
+        return res.status(500).json({ message: "Unable to fetch details, try again later" });
     }
 });
 export const GetUserAllAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -41,7 +41,7 @@ export const GetUserAllAccount = (req, res) => __awaiter(void 0, void 0, void 0,
         return res.status(result.status).json({ message: result.message, account: result.account });
     }
     catch (error) {
-        return res.status(403).json({ message: "unable to fetch user all account" });
+        return res.status(500).json({ message: "Unable to fetch user accounts" });
     }
 });
 export const DeleteAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -51,6 +51,6 @@ export const DeleteAccount = (req, res) => __awaiter(void 0, void 0, void 0, fun
         return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
-        return res.status(203).json({ message: "some invalid Error has occured!" });
+        return res.status(500).json({ message: "Unable to delete account" });
     }
 });

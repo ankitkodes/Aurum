@@ -1,13 +1,13 @@
 import { Router } from "express";
-import { DepositMoney } from "./transaction.controller.js";
+import { CreditMoney, DepositMoney, SendMoney } from "./transaction.controller.js";
 import { authenticate } from "../../shared/middleware/Authentication.js";
 
 const router = Router();
 
 router.use(authenticate);
-router.post("/send");
+router.post("/send", SendMoney);
 router.post("/deposit", DepositMoney);
-router.post("/borrow")
+router.post("/credit", CreditMoney)
 
 
 

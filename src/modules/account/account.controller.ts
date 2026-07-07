@@ -8,12 +8,12 @@ export const CreateAccount = async (req: { body: AccountRegisterSchema; params: 
         const data = await AccountRegister.parse(req.body);
         const result = await CreateAccountService(data, userId);
         if (!result) {
-            return res.status(302).json({ message: "Some problem occured create after sometimes" })
+            return res.status(500).json({ message: "Some problem occured, try again later" })
         }
         return res.status(result.status).json({ message: result.message })
     } catch (error) {
         console.log("controller values:- ", error)
-        return res.status(201).json({ message: "unable to create Account" })
+        return res.status(500).json({ message: "Unable to create Account" })
     }
 };
 
@@ -25,7 +25,7 @@ export const GetAccountDetails = async (req: { params: { accountId: string } }, 
         return res.status(result.status).json({ message: result.message, account: result.account });
 
     } catch (error) {
-        return res.status(302).json({ message: "Unable to fetdetails , Try again later!" })
+        return res.status(500).json({ message: "Unable to fetch details, try again later" })
     }
 }
 
@@ -36,7 +36,7 @@ export const GetUserAllAccount = async (req: { params: { userId: string } }, res
         return res.status(result.status).json({ message: result.message, account: result.account });
 
     } catch (error) {
-        return res.status(403).json({ message: "unable to fetch user all account" });
+        return res.status(500).json({ message: "Unable to fetch user accounts" });
     }
 }
 
@@ -46,6 +46,6 @@ export const DeleteAccount = async (req: { params: { accountId: string } }, res:
         const result = await DeleteAccountService(accountId);
         return res.status(result.status).json({ message: result.message });
     } catch (error) {
-        return res.status(203).json({ message: "some invalid Error has occured!" })
+        return res.status(500).json({ message: "Unable to delete account" })
     }
 }
