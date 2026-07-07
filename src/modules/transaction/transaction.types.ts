@@ -8,8 +8,8 @@ export const DepositMoneySchema = TransactionSchema.pick({
 })
 
 export interface SendMoneySchema {
-    senderAccountNo: number;
-    receiverAccountNo: number;
+    senderAccountNo: string;
+    receiverAccountNo: string;
     amount: string
 }
 
