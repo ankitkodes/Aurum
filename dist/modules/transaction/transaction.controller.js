@@ -18,8 +18,7 @@ export const SendMoney = (req, res) => __awaiter(void 0, void 0, void 0, functio
         return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
-        console.log("error from sendmoney controller:- ", error);
-        return res.status(500).json({ message: "unable to tranfer money" });
+        return res.status(500).json({ message: "Unable to transfer money" });
     }
 });
 export const DepositMoney = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -27,6 +26,7 @@ export const DepositMoney = (req, res) => __awaiter(void 0, void 0, void 0, func
         const data = req.body;
         const transactionDetails = yield DepositMoneySchema.parse(data);
         const result = yield DepositMoneyService(transactionDetails);
+        return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
         return res.status(500).json({ message: "unable to deposit money" });
@@ -35,7 +35,7 @@ export const DepositMoney = (req, res) => __awaiter(void 0, void 0, void 0, func
 export const CreditMoney = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { accountNo } = req.params;
-        const { amount } = req.params;
+        const amount = req.body;
         const result = yield CreditMoneyService({ accountNo, amount });
         return res.status(result.status).json({ message: result.message });
     }

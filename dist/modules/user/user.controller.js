@@ -17,8 +17,7 @@ export const Register = (req, res) => __awaiter(void 0, void 0, void 0, function
         return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
-        console.log("error from register user function:- ", error);
-        return res.status(500).json({ message: "some Invalid error has occured" });
+        return res.status(500).json({ message: "Unable to register user" });
     }
 });
 export const Login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -41,7 +40,7 @@ export const Profile = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(result.status).json({ message: result.message, user: result.user });
     }
     catch (error) {
-        return res.status(500).json({ message: "Some Invalid Error occured!" });
+        return res.status(500).json({ message: "Unable to fetch profile" });
     }
 });
 export const UpdateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -52,14 +51,13 @@ export const UpdateProfile = (req, res) => __awaiter(void 0, void 0, void 0, fun
         return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
-        return res.status(500).json({ message: "Some Invalid Error has Occured!" });
+        return res.status(500).json({ message: "Unable to update profile" });
     }
 });
 export const DeleteProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { userId } = req.params;
         const result = yield DeleteProfileService(userId);
-        console.log("the value of result:- ", result);
         return res.status(result.status).json({ message: result.message });
     }
     catch (error) {

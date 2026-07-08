@@ -24,7 +24,7 @@ export const Account = pgTable("account", {
     accountNo: integer("accountNumber").unique()
         .notNull()
         .$defaultFn(() => {
-            return crypto.getRandomValues(new Uint32Array(1))[0];
+            return Math.floor(Math.random() * 1000000000);
         }),
     balance: numeric('balance', { precision: 15, scale: 2 }).notNull(),
     user_id: uuid('user_id').references(() => User.id).notNull(),

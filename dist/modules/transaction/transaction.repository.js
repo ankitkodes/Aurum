@@ -7,10 +7,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { drizzle } from "drizzle-orm/node-postgres";
 import { Account, Audit_log, LedgerSystem, Transaction } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
-const db = drizzle(process.env.DATABASE_URL);
+import { db } from "../../config/db.js";
 export const SendMoneyRespository = (_a) => __awaiter(void 0, [_a], void 0, function* ({ senderAccountNo, receiverAccountNo, amount }) {
     try {
         // validating sender Account
@@ -95,8 +94,7 @@ export const SendMoneyRespository = (_a) => __awaiter(void 0, [_a], void 0, func
         return { message: "Money transferred successfully", status: 200 };
     }
     catch (error) {
-        console.log("error from sendMoneyrepository section:- ", error);
-        return { message: "some invalid error has occured", status: 500 };
+        return { message: "Unable to transfer money", status: 500 };
     }
 });
 export const DepositMoneyRepository = (data) => __awaiter(void 0, void 0, void 0, function* () {
@@ -111,7 +109,7 @@ export const DepositMoneyRepository = (data) => __awaiter(void 0, void 0, void 0
             const [depositTransaction] = yield tsx.insert(Transaction).values({
                 transaction_amount: data.transaction_amount,
                 receiver_account_id: data.sender_account_id,
-                transactionType: "Debit",
+                transactionType: "Credit",
                 status: "Success",
                 account_id: data.sender_account_id,
                 sender_account_id: data.sender_account_id
@@ -137,7 +135,7 @@ export const DepositMoneyRepository = (data) => __awaiter(void 0, void 0, void 0
         return { message: "Deposit completed successfully", status: 200, transaction };
     }
     catch (error) {
-        return { message: "Failed to deposit money, please try again later", status: 500 };
+        return { message: "Unable to deposit money", status: 500 };
     }
 });
 export const CreditMoneyRepository = (_a) => __awaiter(void 0, [_a], void 0, function* ({ accountNo, amount }) {
@@ -156,7 +154,7 @@ export const CreditMoneyRepository = (_a) => __awaiter(void 0, [_a], void 0, fun
                 transaction_amount: amount,
                 sender_account_id: isAccount[0].id,
                 receiver_account_id: isAccount[0].id,
-                transactionType: "Credit",
+                transactionType: "Debit",
                 status: "Success",
                 account_id: isAccount[0].id
             }).returning({ id: Transaction.id });
@@ -181,6 +179,6 @@ export const CreditMoneyRepository = (_a) => __awaiter(void 0, [_a], void 0, fun
         return { message: "Withdrawal completed successfully", status: 200 };
     }
     catch (error) {
-        return { message: "Failed to withdraw money, please try again later", status: 500 };
+        return { message: "Unable to withdraw money", status: 500 };
     }
 });

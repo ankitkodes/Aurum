@@ -2,8 +2,9 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { CreditMoneySchema, DepositMoneyType, SendMoneySchema } from "./transaction.types.js"
 import { Account, Audit_log, LedgerSystem, Transaction } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
+import { db } from "../../config/db.js";
 
-const db = drizzle(process.env.DATABASE_URL!);
+
 
 export const SendMoneyRespository = async ({ senderAccountNo, receiverAccountNo, amount }: SendMoneySchema) => {
     try {
@@ -120,7 +121,7 @@ export const DepositMoneyRepository = async (data: DepositMoneyType) => {
             const [depositTransaction] = await tsx.insert(Transaction).values({
                 transaction_amount: data.transaction_amount,
                 receiver_account_id: data.sender_account_id,
-                transactionType: "Debit",
+                transactionType: "Credit",
                 status: "Success",
                 account_id: data.sender_account_id,
                 sender_account_id: data.sender_account_id
@@ -170,7 +171,7 @@ export const CreditMoneyRepository = async ({ accountNo, amount }: CreditMoneySc
                 transaction_amount: amount,
                 sender_account_id: isAccount[0].id,
                 receiver_account_id: isAccount[0].id,
-                transactionType: "Credit",
+                transactionType: "Debit",
                 status: "Success",
                 account_id: isAccount[0].id
             }).returning({ id: Transaction.id });

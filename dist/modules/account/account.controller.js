@@ -20,8 +20,7 @@ export const CreateAccount = (req, res) => __awaiter(void 0, void 0, void 0, fun
         return res.status(result.status).json({ message: result.message });
     }
     catch (error) {
-        console.log("controller values:- ", error);
-        return res.status(500).json({ message: "Unable to create Account" });
+        return res.status(500).json({ message: "Unable to create account" });
     }
 });
 export const GetAccountDetails = (req, res) => __awaiter(void 0, void 0, void 0, function* () {

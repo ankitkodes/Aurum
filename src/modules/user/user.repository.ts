@@ -4,8 +4,8 @@ import { Audit_log, User } from "../../db/schema.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
+import { db } from "../../config/db.js";
 
-const db = drizzle(process.env.DATABASE_URL!);
 
 export const RegisterRepository = async (data: UserRegistrationSchema) => {
     const isExist = await db.select().from(User).where(eq(User.phoneNo, data.phoneNo));

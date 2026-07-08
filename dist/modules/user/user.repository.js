@@ -7,12 +7,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { drizzle } from "drizzle-orm/node-postgres";
 import { Audit_log, User } from "../../db/schema.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
-const db = drizzle(process.env.DATABASE_URL);
+import { db } from "../../config/db.js";
 export const RegisterRepository = (data) => __awaiter(void 0, void 0, void 0, function* () {
     const isExist = yield db.select().from(User).where(eq(User.phoneNo, data.phoneNo));
     if (isExist.length > 0) {
@@ -42,7 +41,7 @@ export const RegisterRepository = (data) => __awaiter(void 0, void 0, void 0, fu
             registrationSource: "self-service"
         }
     });
-    return { message: "Account Created successfully", status: 201 };
+    return { message: "Account created successfully", status: 201 };
 });
 export const LoginRespository = (data) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield db.select().from(User).where(eq(User.phoneNo, data.phoneNo));
@@ -66,7 +65,7 @@ export const LoginRespository = (data) => __awaiter(void 0, void 0, void 0, func
 });
 export const ProfileRepository = (userId) => __awaiter(void 0, void 0, void 0, function* () {
     const userDetails = yield db.select().from(User).where(eq(User.id, userId));
-    return { message: "profile retured successfully", status: 200, user: userDetails[0] };
+    return { message: "Profile returned successfully", status: 200, user: userDetails[0] };
 });
 export const UpdateProfileRespository = (userId, data) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -102,10 +101,10 @@ export const UpdateProfileRespository = (userId, data) => __awaiter(void 0, void
                 }
             }
         });
-        return { message: "profile updated Successfully", status: 200 };
+        return { message: "Profile updated successfully", status: 200 };
     }
     catch (error) {
-        return { message: "unable to find profile", status: 500 };
+        return { message: "Unable to find profile", status: 500 };
     }
 });
 export const DeleteProfileRepository = (userId) => __awaiter(void 0, void 0, void 0, function* () {
@@ -131,9 +130,9 @@ export const DeleteProfileRepository = (userId) => __awaiter(void 0, void 0, voi
             }
         });
         yield db.delete(User).where(eq(User.id, userId));
-        return { message: "profile delete successfully", status: 200 };
+        return { message: "Profile deleted successfully", status: 200 };
     }
     catch (error) {
-        return { message: "some Invalid error has occured", status: 500 };
+        return { message: "Unable to delete profile", status: 500 };
     }
 });

@@ -1,9 +1,9 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Account, Audit_log, Transaction } from "../../db/schema.js";
+import { Account, Audit_log, Transaction, User } from "../../db/schema.js";
 import { AccountRegisterSchema } from "./account.types.js";
-import { desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
+import { db } from "../../config/db.js";
 
-const db = drizzle(process.env.DATABASE_URL!);
 
 export const CreateAccountRepository = async (data: AccountRegisterSchema, userId: string) => {
     try {
@@ -11,9 +11,18 @@ export const CreateAccountRepository = async (data: AccountRegisterSchema, userI
             return { message: "Category is required", status: 400 };
         }
 
-        const isExist = await db.select().from(Account).where(eq(Account.category, data.category));
+        // Validate user exists before creating account
+        const userExists = await db.select({ id: User.id }).from(User).where(eq(User.id, userId));
+        if (userExists.length < 1) {
+            return { message: "User not found", status: 404 };
+        }
+
+        // Check if this user already has an account of the same category
+        const isExist = await db.select().from(Account).where(
+            and(eq(Account.category, data.category), eq(Account.user_id, userId))
+        );
         if (isExist.length > 0) {
-            return { message: "Account Already Exist", status: 302 };
+            return { message: "Account of this type already exists for this user", status: 302 };
         }
 
         const [createdAccount] = await db.insert(Account).values({
@@ -36,8 +45,8 @@ export const CreateAccountRepository = async (data: AccountRegisterSchema, userI
 
         return { message: "Account Created Successfully", status: 200 };
     } catch (error) {
-        console.log("repo file:- ", error);
-        return { message: "Unable to create Account", status: 304 };
+        console.log("Error in CreateAccountRepository", error);
+        return { message: "Unable to create account", status: 500 };
     }
 };
 
@@ -45,11 +54,11 @@ export const GetAccountDetailsRepository = async (accountId: string) => {
     try {
         const accountdetails = await db.select().from(Account).where(eq(Account.id, accountId));
         if (accountdetails.length < 1) {
-            return { message: "There isn't account Create it", status: 203 };
+            return { message: "Account not found", status: 404 };
         }
-        return { message: "here your Account details", status: 300, account: accountdetails };
+        return { message: "Account details fetched successfully", status: 200, account: accountdetails };
     } catch (error) {
-        return { message: "unable to fetched details", status: 300 };
+        return { message: "Unable to fetch account details", status: 500 };
     }
 };
 
@@ -107,6 +116,6 @@ export const DeleteAccountRepository = async (accountId: string) => {
         await db.delete(Account).where(eq(Account.id, accountId));
         return { message: "Account deleted successfully", status: 200 };
     } catch (error) {
-        return { message: "unable to delete account", status: 304 };
+        return { message: "Unable to delete account", status: 500 };
     }
 };

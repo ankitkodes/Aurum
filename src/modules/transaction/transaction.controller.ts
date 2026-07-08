@@ -18,16 +18,17 @@ export const DepositMoney = async (req: { body: string; }, res: any) => {
         const data = req.body;
         const transactionDetails = await DepositMoneySchema.parse(data);
         const result = await DepositMoneyService(transactionDetails);
+        return res.status(result.status).json({ message: result.message });
     } catch (error) {
         return res.status(500).json({ message: "unable to deposit money" })
     }
 }
 
 
-export const CreditMoney = async (req: { params: { accountNo: number, amount: string } }, res: any) => {
+export const CreditMoney = async (req: { body: string; params: { accountNo: number } }, res: any) => {
     try {
         const { accountNo } = req.params;
-        const { amount } = req.params;
+        const amount = req.body;
         const result = await CreditMoneyService({ accountNo, amount });
         return res.status(result.status).json({ message: result.message })
     } catch (error) {
