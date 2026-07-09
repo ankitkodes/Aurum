@@ -1,0 +1,1 @@
+CREATE INDEX "account_id" ON "transaction" USING btree ("sender_account_id","receiver_account_id");

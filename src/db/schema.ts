@@ -1,3 +1,4 @@
+import { index } from "drizzle-orm/pg-core";
 import { json } from "drizzle-orm/pg-core";
 import { numeric } from "drizzle-orm/pg-core";
 import { pgEnum, uuid } from "drizzle-orm/pg-core";
@@ -45,7 +46,10 @@ export const Transaction = pgTable("transaction", {
     status: StatusEnum().default("Pending"),
     account_id: uuid('account_id').references(() => Account.id).notNull(),
     created_at: timestamp('created_at').defaultNow()
-});
+}, (table) => [
+    index('sender_account_id').on(table.sender_account_id.asc()),
+    index('receiver_account_id').on(table.receiver_account_id.asc())
+]);
 
 export const LedgerSystem = pgTable("ledger_system", {
     id: uuid('id').primaryKey().defaultRandom(),
