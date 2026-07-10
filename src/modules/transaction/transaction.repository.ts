@@ -141,6 +141,14 @@ export const DepositMoneyRepository = async (data: DepositMoneyType) => {
                 }
             });
 
+            // ledger entry for deposit
+            await tsx.insert(LedgerSystem).values({
+                account_id: data.sender_account_id,
+                transaction_id: depositTransaction.id,
+                type: "Credit",
+                amount: data.transaction_amount
+            });
+
             // updating account balance 
             await tsx.update(Account).set({
                 balance: String(totalamount)
@@ -188,6 +196,14 @@ export const CreditMoneyRepository = async ({ accountNo, amount }: CreditMoneySc
                     amount,
                     remainingBalance: String(Number(isAccount[0].balance) - Number(amount))
                 }
+            });
+
+            // ledger entry for withdrawal
+            await tsx.insert(LedgerSystem).values({
+                account_id: isAccount[0].id,
+                transaction_id: withdrawTransaction.id,
+                type: "Debit",
+                amount
             });
 
             // updating account balance

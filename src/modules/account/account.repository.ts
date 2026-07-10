@@ -70,7 +70,7 @@ export const GetTransactionHistoryRepository = async (accountId: string) => {
                 eq(Transaction.sender_account_id, accountId),
                 eq(Transaction.receiver_account_id, accountId)
             ))
-            .orderBy(desc(Transaction.created_at));
+            .orderBy(desc(Transaction.created_at)).limit(10);
 
         if (transactions.length < 1) {
             return { message: "No transaction history found", status: 404, transactions: [] };
