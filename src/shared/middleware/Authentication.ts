@@ -1,10 +1,12 @@
 import jwt from "jsonwebtoken";
+import { InvalidTokenError } from "../../errors/auth/InvalidTokenError.js";
+import { UnauthorizedError } from "../../errors/auth/UnauthorizedError.js";
 
 export const authenticate = (req: any, res: any, next: any) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ message: "token not found" });
+        throw new UnauthorizedError();
     }
 
     const token = authHeader.split(" ")[1];
@@ -16,7 +18,7 @@ export const authenticate = (req: any, res: any, next: any) => {
 
     jwt.verify(token, secret, (err: any, user: any) => {
         if (err) {
-            return res.status(401).json({ message: "invalid token" });
+            throw new InvalidTokenError();
         }
 
         req.user = user;

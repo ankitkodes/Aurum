@@ -3,10 +3,8 @@ import { CreateAccountRepository, DeleteAccountRepository, GetAccountDetailsRepo
 import { AccountRegisterSchema } from "./account.types.js";
 
 export const CreateAccountService = async (data: AccountRegisterSchema, userId: string) => {
-    const isEligble = CheckElegiblityCriteria(data);
-    if (!isEligble) {
-        return isEligble;
-    }
+    // Throws ValidationError if criteria not met
+    CheckElegiblityCriteria(data);
     return await CreateAccountRepository(data, userId);
 }
 

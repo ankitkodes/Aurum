@@ -3,6 +3,8 @@ import { CreditMoneySchema, DepositMoneyType, SendMoneySchema } from "./transact
 import { Account, Audit_log, LedgerSystem, Transaction } from "../../db/schema.js";
 import { eq } from "drizzle-orm";
 import { db } from "../../config/db.js";
+import { InsufficientBalanceError } from "../../errors/account/InsufficientBalanceError.js";
+import { AccountNotFoundError } from "../../errors/account/AccountNotFoundError.js";
 
 
 
@@ -12,24 +14,24 @@ export const SendMoneyRespository = async ({ senderAccountNo, receiverAccountNo,
         // validating sender Account
         const IssenderidExist = await db.select().from(Account).where(eq(Account.accountNo, Number(senderAccountNo)));
         if (IssenderidExist.length < 1) {
-            return { message: "Sender account not found", status: 404 };
+            throw new AccountNotFoundError(String(senderAccountNo))
         }
 
         // checking amount where transtaction amount should be less than sender balance
         if (Number(IssenderidExist[0].balance) < Number(amount)) {
-            return { message: "Insufficient balance in sender account", status: 400 };
+            throw new InsufficientBalanceError();
         }
         // validing receiver account
         const IsreceiverId = await db.select().from(Account).where(eq(Account.accountNo, Number(receiverAccountNo)));
 
         if (IsreceiverId.length < 1) {
-            return { message: "Receiver account not found", status: 404 }
+            throw new AccountNotFoundError(String(receiverAccountNo))
         }
 
         // platform account Id
         const platform_account_id = process.env.PLATFORM_ACCOUNTNO
         if (!platform_account_id) {
-            return { message: "unable to transfer money", status: 403 }
+            return { message: "missing platform account details", status: 403 }
         }
 
         // transaction where the money is tranfer from sender account to receiver account and also being deducted platfrom charges
@@ -103,8 +105,9 @@ export const SendMoneyRespository = async ({ senderAccountNo, receiverAccountNo,
         })
 
         return { message: "Money transferred successfully", status: 200 };
-    } catch (error) {
-        return { message: "Unable to transfer money", status: 500 }
+    } catch (err) {
+        console.error(err);
+        throw err;
     }
 }
 
@@ -112,7 +115,7 @@ export const DepositMoneyRepository = async (data: DepositMoneyType) => {
     try {
         const isAccount = await db.select().from(Account).where(eq(Account.id, data.sender_account_id));
         if (isAccount.length < 1) {
-            return { message: "Account not found for deposit", status: 404 };
+            throw new AccountNotFoundError(data.sender_account_id);
         }
         const totalamount = Number(data.transaction_amount) + Number(isAccount[0].balance);
         const transaction = await db.transaction(async (tsx) => {
@@ -155,8 +158,9 @@ export const DepositMoneyRepository = async (data: DepositMoneyType) => {
             }).where(eq(Account.id, data.sender_account_id));
         })
         return { message: "Deposit completed successfully", status: 200, transaction };
-    } catch (error) {
-        return { message: "Unable to deposit money", status: 500 };
+    } catch (err) {
+        console.error(err);
+        throw err;
     }
 
 }
@@ -165,10 +169,10 @@ export const CreditMoneyRepository = async ({ accountNo, amount }: CreditMoneySc
     try {
         const isAccount = await db.select().from(Account).where(eq(Account.accountNo, accountNo));
         if (isAccount.length < 1) {
-            return { message: "Account not found for withdrawal", status: 404 };
+            throw new AccountNotFoundError(String(accountNo));
         }
         if (Number(isAccount[0].balance) < Number(amount)) {
-            return { message: "Insufficient balance for withdrawal", status: 400 };
+            throw new InsufficientBalanceError();
         }
 
         //   credit money from account;
@@ -212,7 +216,8 @@ export const CreditMoneyRepository = async ({ accountNo, amount }: CreditMoneySc
             }).where(eq(Account.id, isAccount[0].id))
         })
         return { message: "Withdrawal completed successfully", status: 200 };
-    } catch (error) {
-        return { message: "Unable to withdraw money", status: 500 };
+    } catch (err) {
+        console.error(err);
+        throw err;
     }
 }

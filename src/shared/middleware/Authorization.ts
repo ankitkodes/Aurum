@@ -2,6 +2,10 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { Account } from "../../db/schema.js";
 import { GetAccountDetailsRepository } from "../../modules/account/account.repository.js";
+import { ForbiddenError } from "../../errors/auth/ForbiddenError.js";
+import { AccountNotFoundError } from "../../errors/account/AccountNotFoundError.js";
+import { UnauthorizedError } from "../../errors/auth/UnauthorizedError.js";
+import { ValidationError } from "../../errors/validation/ValidationError.js";
 
 const db = drizzle(process.env.DATABASE_URL!);
 
@@ -11,15 +15,15 @@ export const authorizeUserAccess = (paramName = "userId") => {
         const requestedUserId = req.params?.[paramName];
 
         if (!authenticatedUser || !authenticatedUser.id) {
-            return res.status(401).json({ message: "Unauthorized" });
+            throw new UnauthorizedError();
         }
 
         if (!requestedUserId) {
-            return res.status(400).json({ message: "Missing resource owner id" });
+            throw new ValidationError("Missing resource owner id");
         }
 
         if (authenticatedUser.id !== requestedUserId) {
-            return res.status(403).json({ message: "Forbidden: user not allowed to access this resource" });
+            throw new ForbiddenError();
         }
 
         next();
@@ -32,50 +36,40 @@ export const authorizeAccountAccess = (paramName = "accountId") => {
         const accountId = req.params?.[paramName];
 
         if (!authenticatedUser || !authenticatedUser.id) {
-            return res.status(401).json({ message: "Unauthorized" });
+            throw new UnauthorizedError();
         }
         if (!accountId) {
-            return res.status(400).json({ message: "Missing account id" });
+            throw new ValidationError("Missing account id");
         }
 
         const result = await GetAccountDetailsRepository(accountId);
 
         if (result.status === 404 || !result.account || result.account.length < 1) {
-            return res.status(404).json({ message: "Account not found" });
+            throw new AccountNotFoundError(accountId);
         }
 
         if (authenticatedUser.id !== result.account[0].user_id) {
-            return res.status(403).json({ message: "Forbidden: user not allowed to access this resource" });
+            throw new ForbiddenError();
         }
 
         next();
     };
 };
 
-/**
- * Middleware to authorize transaction access.
- * Verifies that the authenticated user owns the sender/source account
- * before allowing the transaction to proceed.
- * 
- * Supports 3 modes based on how the account is identified:
- *  - "accountNo"  → looks up by Account.accountNo (for send/credit routes)
- *  - "accountId"  → looks up by Account.id UUID  (for deposit route)
- * 
- * The field value is resolved from req.params first, then req.body.
- */
+
 export const authorizeTransactionAccess = (fieldName = "senderAccountNo", lookupBy: "accountNo" | "accountId" = "accountNo") => {
     return async (req: any, res: any, next: any) => {
         const authenticatedUser = req.user;
 
         if (!authenticatedUser || !authenticatedUser.id) {
-            return res.status(401).json({ message: "Unauthorized" });
+            throw new UnauthorizedError();
         }
 
         // Check params first (URL path), then fall back to body
         const fieldValue = req.params?.[fieldName] ?? req.body?.[fieldName];
 
         if (!fieldValue) {
-            return res.status(400).json({ message: `Missing required field: ${fieldName}` });
+            throw new ValidationError(`Missing required field: ${fieldName}`);
         }
 
         try {
@@ -90,11 +84,11 @@ export const authorizeTransactionAccess = (fieldName = "senderAccountNo", lookup
             }
 
             if (!account) {
-                return res.status(404).json({ message: "Source account not found" });
+                throw new AccountNotFoundError(String(fieldValue));
             }
 
             if (authenticatedUser.id !== account.user_id) {
-                return res.status(403).json({ message: "Forbidden: you do not own this account" });
+                throw new ForbiddenError();
             }
 
             next();
