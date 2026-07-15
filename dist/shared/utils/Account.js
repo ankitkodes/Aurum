@@ -1,9 +1,9 @@
+import { ValidationError } from "../../errors/validation/ValidationError.js";
 export function CheckElegiblityCriteria(data) {
     if (data.category == "Saving" && Number(data.balance) < 2000) {
-        return { message: "Minimum Amount for Saving account should be 2000", status: 400, success: false };
+        throw new ValidationError("Minimum Amount for Saving account should be 2000");
     }
     else if (data.category == "Current" && Number(data.balance) < 10000) {
-        return { message: "Minimum Amount for Current account should be 10000", status: 400, success: false };
+        throw new ValidationError("Minimum Amount for Current account should be 10000");
     }
-    return { message: "eliglbe to create account", status: 200, success: true };
 }

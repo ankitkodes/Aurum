@@ -7,7 +7,7 @@ exports.default = (0, drizzle_kit_1.defineConfig)({
     out: './drizzle',
     dialect: 'postgresql',
     dbCredentials: {
-        url: (_a = process.env.DATABASE_URL) !== null && _a !== void 0 ? _a : 'postgresql://localhost:5432/aurum',
+        url: (_a = process.env.DATABASE_URL) !== null && _a !== void 0 ? _a : 'postgresql://postgres:admin@localhost:5432/aurum',
     },
     migrations: {
         table: 'drizzle_migrations',

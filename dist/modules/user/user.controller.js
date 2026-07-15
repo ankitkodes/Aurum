@@ -8,59 +8,48 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import { UserSchema } from "../../db/schema.js";
+import { ValidationError } from "../../errors/validation/ValidationError.js";
+import { asyncHander } from "../../shared/handler/asyncHandler.js";
 import { DeleteProfileService, LoginService, ProfileService, RegisterService, UpdateProfileService } from "./user.service.js";
 import { UserLogin } from "./user.types.js";
-export const Register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const data = yield UserSchema.parse(req.body);
-        const result = yield RegisterService(data);
-        return res.status(result.status).json({ message: result.message });
+export const Register = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = UserSchema.safeParse(req.body);
+    if (!result.success) {
+        throw new ValidationError("validation failed");
     }
-    catch (error) {
-        return res.status(500).json({ message: "Unable to register user" });
+    const data = result.data;
+    const response = yield RegisterService(data);
+    return res.status(response.status).json({ message: response.message });
+}));
+export const Login = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const result = UserLogin.safeParse(req.body);
+    if (!result.success) {
+        throw new ValidationError("validation failed");
     }
-});
-export const Login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const logindata = yield UserLogin.parse(req.body);
-        const result = yield LoginService(logindata);
-        if (!result) {
-            return res.status(500).json({ message: "Unable to Login!" });
-        }
-        return res.status(result.status).json({ message: result.message, token: result.token });
-    }
-    catch (error) {
+    const logindata = result.data;
+    const loginResult = yield LoginService(logindata);
+    if (!loginResult) {
         return res.status(500).json({ message: "Unable to Login!" });
     }
-});
-export const Profile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { userId } = req.params;
-        const result = yield ProfileService(userId);
-        return res.status(result.status).json({ message: result.message, user: result.user });
+    return res.status(loginResult.status).json({ message: loginResult.message, token: loginResult.token });
+}));
+export const Profile = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId } = req.params;
+    const result = yield ProfileService(userId);
+    return res.status(result.status).json({ message: result.message, user: result.user });
+}));
+export const UpdateProfile = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId } = req.params;
+    const result = UserSchema.safeParse(req.body);
+    if (!result.success) {
+        throw new ValidationError("validation failed");
     }
-    catch (error) {
-        return res.status(500).json({ message: "Unable to fetch profile" });
-    }
-});
-export const UpdateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { userId } = req.params;
-        const data = yield UserSchema.parse(req.body);
-        const result = yield UpdateProfileService(userId, data);
-        return res.status(result.status).json({ message: result.message });
-    }
-    catch (error) {
-        return res.status(500).json({ message: "Unable to update profile" });
-    }
-});
-export const DeleteProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { userId } = req.params;
-        const result = yield DeleteProfileService(userId);
-        return res.status(result.status).json({ message: result.message });
-    }
-    catch (error) {
-        return res.status(500).json({ message: "Unable to delete profile" });
-    }
-});
+    const data = result.data;
+    const response = yield UpdateProfileService(userId, data);
+    return res.status(response.status).json({ message: response.message });
+}));
+export const DeleteProfile = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId } = req.params;
+    const result = yield DeleteProfileService(userId);
+    return res.status(result.status).json({ message: result.message });
+}));

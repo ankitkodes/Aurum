@@ -1,4 +1,4 @@
-import { NextFunction } from "express";
+import { NextFunction, Request, Response } from "express";
 
 // global controller error handler
 export const asyncHander = (fn: Function) =>

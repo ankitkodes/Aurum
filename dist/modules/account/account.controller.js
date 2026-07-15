@@ -7,63 +7,44 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import { ValidationError } from "../../errors/validation/ValidationError.js";
+import { asyncHander } from "../../shared/handler/asyncHandler.js";
 import { CreateAccountService, DeleteAccountService, GetAccountDetailsService, GetUserAllAccountService, TransactionHistoryService } from "./account.service.js";
 import { AccountRegister } from "./account.types.js";
-export const CreateAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { userId } = req.params;
-        const data = yield AccountRegister.parse(req.body);
-        const result = yield CreateAccountService(data, userId);
-        if (!result) {
-            return res.status(500).json({ message: "Some problem occured, try again later" });
-        }
-        return res.status(result.status).json({ message: result.message });
+export const CreateAccount = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId } = req.params;
+    const result = AccountRegister.safeParse(req.body);
+    if (!result.success) {
+        throw new ValidationError("validation failed");
     }
-    catch (error) {
-        return res.status(500).json({ message: "Unable to create account" });
+    const data = result.data;
+    const response = yield CreateAccountService(data, userId);
+    if (!response) {
+        return res.status(500).json({ message: "Some problem occured, try again later" });
     }
-});
-export const GetAccountDetails = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { accountId } = req.params;
-        const result = yield GetAccountDetailsService(accountId);
-        return res.status(result.status).json({ message: result.message, account: result.account });
-    }
-    catch (error) {
-        return res.status(500).json({ message: "Unable to fetch details, try again later" });
-    }
-});
-export const TransactionHistory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    return res.status(response.status).json({ message: response.message });
+}));
+export const GetAccountDetails = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { accountId } = req.params;
+    const result = yield GetAccountDetailsService(accountId);
+    return res.status(result.status).json({ message: result.message, account: result.account });
+}));
+export const TransactionHistory = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    try {
-        const { accountId } = req.params;
-        const result = yield TransactionHistoryService(accountId);
-        return res.status(result.status).json({
-            message: result.message,
-            transactions: (_a = result.transactions) !== null && _a !== void 0 ? _a : []
-        });
-    }
-    catch (error) {
-        return res.status(500).json({ message: "Unable to fetch transaction details" });
-    }
-});
-export const GetUserAllAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { userId } = req.params;
-        const result = yield GetUserAllAccountService(userId);
-        return res.status(result.status).json({ message: result.message, account: result.account });
-    }
-    catch (error) {
-        return res.status(500).json({ message: "Unable to fetch user accounts" });
-    }
-});
-export const DeleteAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { accountId } = req.params;
-        const result = yield DeleteAccountService(accountId);
-        return res.status(result.status).json({ message: result.message });
-    }
-    catch (error) {
-        return res.status(500).json({ message: "Unable to delete account" });
-    }
-});
+    const { accountId } = req.params;
+    const result = yield TransactionHistoryService(accountId);
+    return res.status(result.status).json({
+        message: result.message,
+        transactions: (_a = result.transactions) !== null && _a !== void 0 ? _a : []
+    });
+}));
+export const GetUserAllAccount = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId } = req.params;
+    const result = yield GetUserAllAccountService(userId);
+    return res.status(result.status).json({ message: result.message, account: result.account });
+}));
+export const DeleteAccount = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { accountId } = req.params;
+    const result = yield DeleteAccountService(accountId);
+    return res.status(result.status).json({ message: result.message });
+}));

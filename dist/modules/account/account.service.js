@@ -10,10 +10,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 import { CheckElegiblityCriteria } from "../../shared/utils/Account.js";
 import { CreateAccountRepository, DeleteAccountRepository, GetAccountDetailsRepository, GetTransactionHistoryRepository, GetUserAllAccountRepository } from "./account.repository.js";
 export const CreateAccountService = (data, userId) => __awaiter(void 0, void 0, void 0, function* () {
-    const isEligble = CheckElegiblityCriteria(data);
-    if (!isEligble) {
-        return isEligble;
-    }
+    // Throws ValidationError if criteria not met
+    CheckElegiblityCriteria(data);
     return yield CreateAccountRepository(data, userId);
 });
 export const GetAccountDetailsService = (accountId) => __awaiter(void 0, void 0, void 0, function* () {

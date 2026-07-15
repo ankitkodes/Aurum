@@ -11,6 +11,10 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { Account } from "../../db/schema.js";
 import { GetAccountDetailsRepository } from "../../modules/account/account.repository.js";
+import { ForbiddenError } from "../../errors/auth/ForbiddenError.js";
+import { AccountNotFoundError } from "../../errors/account/AccountNotFoundError.js";
+import { UnauthorizedError } from "../../errors/auth/UnauthorizedError.js";
+import { ValidationError } from "../../errors/validation/ValidationError.js";
 const db = drizzle(process.env.DATABASE_URL);
 export const authorizeUserAccess = (paramName = "userId") => {
     return (req, res, next) => {
@@ -18,13 +22,13 @@ export const authorizeUserAccess = (paramName = "userId") => {
         const authenticatedUser = req.user;
         const requestedUserId = (_a = req.params) === null || _a === void 0 ? void 0 : _a[paramName];
         if (!authenticatedUser || !authenticatedUser.id) {
-            return res.status(401).json({ message: "Unauthorized" });
+            throw new UnauthorizedError();
         }
         if (!requestedUserId) {
-            return res.status(400).json({ message: "Missing resource owner id" });
+            throw new ValidationError("Missing resource owner id");
         }
         if (authenticatedUser.id !== requestedUserId) {
-            return res.status(403).json({ message: "Forbidden: user not allowed to access this resource" });
+            throw new ForbiddenError();
         }
         next();
     };
@@ -35,43 +39,32 @@ export const authorizeAccountAccess = (paramName = "accountId") => {
         const authenticatedUser = req.user;
         const accountId = (_a = req.params) === null || _a === void 0 ? void 0 : _a[paramName];
         if (!authenticatedUser || !authenticatedUser.id) {
-            return res.status(401).json({ message: "Unauthorized" });
+            throw new UnauthorizedError();
         }
         if (!accountId) {
-            return res.status(400).json({ message: "Missing account id" });
+            throw new ValidationError("Missing account id");
         }
         const result = yield GetAccountDetailsRepository(accountId);
         if (result.status === 404 || !result.account || result.account.length < 1) {
-            return res.status(404).json({ message: "Account not found" });
+            throw new AccountNotFoundError(accountId);
         }
         if (authenticatedUser.id !== result.account[0].user_id) {
-            return res.status(403).json({ message: "Forbidden: user not allowed to access this resource" });
+            throw new ForbiddenError();
         }
         next();
     });
 };
-/**
- * Middleware to authorize transaction access.
- * Verifies that the authenticated user owns the sender/source account
- * before allowing the transaction to proceed.
- *
- * Supports 3 modes based on how the account is identified:
- *  - "accountNo"  → looks up by Account.accountNo (for send/credit routes)
- *  - "accountId"  → looks up by Account.id UUID  (for deposit route)
- *
- * The field value is resolved from req.params first, then req.body.
- */
 export const authorizeTransactionAccess = (fieldName = "senderAccountNo", lookupBy = "accountNo") => {
     return (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b, _c;
         const authenticatedUser = req.user;
         if (!authenticatedUser || !authenticatedUser.id) {
-            return res.status(401).json({ message: "Unauthorized" });
+            throw new UnauthorizedError();
         }
         // Check params first (URL path), then fall back to body
         const fieldValue = (_b = (_a = req.params) === null || _a === void 0 ? void 0 : _a[fieldName]) !== null && _b !== void 0 ? _b : (_c = req.body) === null || _c === void 0 ? void 0 : _c[fieldName];
         if (!fieldValue) {
-            return res.status(400).json({ message: `Missing required field: ${fieldName}` });
+            throw new ValidationError(`Missing required field: ${fieldName}`);
         }
         try {
             let account;
@@ -84,10 +77,10 @@ export const authorizeTransactionAccess = (fieldName = "senderAccountNo", lookup
                 account = results[0];
             }
             if (!account) {
-                return res.status(404).json({ message: "Source account not found" });
+                throw new AccountNotFoundError(String(fieldValue));
             }
             if (authenticatedUser.id !== account.user_id) {
-                return res.status(403).json({ message: "Forbidden: you do not own this account" });
+                throw new ForbiddenError();
             }
             next();
         }

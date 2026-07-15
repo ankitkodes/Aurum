@@ -7,39 +7,40 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import { ValidationError } from "../../errors/validation/ValidationError.js";
+import { asyncHander } from "../../shared/handler/asyncHandler.js";
 import { CreditMoneyService, DepositMoneyService, SendMoneyService } from "./transaction.service.js";
 import { DepositMoneySchema } from "./transaction.types.js";
-export const SendMoney = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { senderAccountNo } = req.params;
-        const { receiverAccountNo } = req.params;
-        const { amount } = req.body;
-        const result = yield SendMoneyService({ senderAccountNo: Number(senderAccountNo), receiverAccountNo: Number(receiverAccountNo), amount });
-        return res.status(result.status).json({ message: result.message });
+export const SendMoney = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { senderAccountNo } = req.params;
+    const { receiverAccountNo } = req.params;
+    const { amount } = req.body;
+    // Input validation — these were completely missing before
+    if (!senderAccountNo || !receiverAccountNo) {
+        throw new ValidationError("Sender and receiver account numbers are required");
     }
-    catch (error) {
-        return res.status(500).json({ message: "Unable to transfer money" });
+    if (senderAccountNo === receiverAccountNo) {
+        throw new ValidationError("Cannot send money to the same account");
     }
-});
-export const DepositMoney = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const data = req.body;
-        const transactionDetails = yield DepositMoneySchema.parse(data);
-        const result = yield DepositMoneyService(transactionDetails);
-        return res.status(result.status).json({ message: result.message });
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+        throw new ValidationError("Amount must be a positive number");
     }
-    catch (error) {
-        return res.status(500).json({ message: "unable to deposit money" });
+    const result = yield SendMoneyService({ senderAccountNo: Number(senderAccountNo), receiverAccountNo: Number(receiverAccountNo), amount });
+    return res.status(result.status).json({ message: result.message });
+}));
+export const DepositMoney = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const data = req.body;
+    const result = DepositMoneySchema.safeParse(data);
+    if (!result.success) {
+        throw new ValidationError("validation failed");
     }
-});
-export const CreditMoney = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { accountNo } = req.params;
-        const amount = req.body;
-        const result = yield CreditMoneyService({ accountNo, amount });
-        return res.status(result.status).json({ message: result.message });
-    }
-    catch (error) {
-        return res.status(500).json({ message: "unable to credit money " });
-    }
-});
+    const transactionDetails = result.data;
+    const response = yield DepositMoneyService(transactionDetails);
+    return res.status(response.status).json({ message: response.message });
+}));
+export const CreditMoney = asyncHander((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { accountNo } = req.params;
+    const amount = req.body;
+    const result = yield CreditMoneyService({ accountNo, amount });
+    return res.status(result.status).json({ message: result.message });
+}));
